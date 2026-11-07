@@ -17,7 +17,8 @@ end
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
-local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6 }
+local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5 }
+local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
 local ROW, GAP, HEAD = 38, 3, 20 -- Zeile: oben Item + Knöpfe, darunter die Würfe der anderen
 -- Lootfilter: je Qualität automatisch würfeln ("greed" | "pass"); gebundene Items (BoP) immer fragen
 local FILTER_Q = { { 1, "Gewöhnlich (weiß)" }, { 2, "Ungewöhnlich (grün)" }, { 3, "Selten (blau)" }, { 4, "Episch (lila)" } }
@@ -105,16 +106,11 @@ local function RowTooltip(self)
     GameTooltip:Show()
 end
 
+local Sorted -- (unten definiert)
 local function PlayersTooltip(r)
     GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
     GameTooltip:SetText(r.name:GetText() or "", 1, 1, 1)
-    local names = {}
-    for _, n in ipairs(r.porder or {}) do names[#names + 1] = n end
-    table.sort(names, function(a, b)
-        local pa, pb = r.players[a], r.players[b]
-        if (SORT[pa.choice] or 5) ~= (SORT[pb.choice] or 5) then return (SORT[pa.choice] or 5) < (SORT[pb.choice] or 5) end
-        return (pa.roll or 0) > (pb.roll or 0)
-    end)
+    local names = Sorted(r)
     if #names == 0 then GameTooltip:AddLine("Noch keine Wahl der anderen.", 0.6, 0.6, 0.6) end
     GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.5, 0.5, 0.5)
     for _, n in ipairs(names) do
@@ -164,7 +160,7 @@ local function NewRow()
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
     r.iconBtn = CreateFrame("Button", nil, r)
     r.iconBtn:SetSize(ROW - 6, ROW - 6)
-    r.iconBtn:SetPoint("LEFT", 3, 0)
+    r.iconBtn:SetPoint("TOPLEFT", 3, -3)
     r.icon = r.iconBtn:CreateTexture(nil, "ARTWORK")
     r.icon:SetAllPoints()
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -194,8 +190,8 @@ local function NewRow()
     r.info:SetShadowColor(0, 0, 0, 1); r.info:SetShadowOffset(1, -1)
     -- Restzeit: feiner Balken am unteren Rand
     r.bar = CreateFrame("StatusBar", nil, r)
-    r.bar:SetPoint("BOTTOMLEFT", r.iconBtn, "BOTTOMRIGHT", 2, -1)
-    r.bar:SetPoint("BOTTOMRIGHT", 0, 0)
+    r.bar:SetPoint("TOPLEFT", r, "TOPLEFT", ROW - 1, -(ROW - 3))
+    r.bar:SetPoint("TOPRIGHT", r, "TOPRIGHT", -2, -(ROW - 3))
     r.bar:SetHeight(2)
     r.bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
     r.bar:SetMinMaxValues(0, 1)
@@ -251,7 +247,7 @@ local function UpdateInfo(r)
     elseif r.bop then
         parts[1] = "|cffff6060gebunden|r"
     end
-    if not r.winner and not r.allPassed then
+    if not r.winner and not r.allPassed and not db.list then
         local by = {}
         for _, name in ipairs(r.porder) do
             local p = r.players[name]
@@ -272,6 +268,69 @@ local function UpdateInfo(r)
     end
     r.info:SetText(table.concat(parts, "  ·  "))
 end
+-- Mitspieler sortiert: Bedarf » Gier » Entzaubern » noch offen » Passen, jeweils höchster Wurf zuerst
+function Sorted(r)
+    local names = {}
+    for _, n in ipairs(r.porder or {}) do names[#names + 1] = n end
+    table.sort(names, function(a, b)
+        local pa, pb = r.players[a], r.players[b]
+        local sa, sb = SORT[pa.choice] or 3.5, SORT[pb.choice] or 3.5
+        if sa ~= sb then return sa < sb end
+        return (pa.roll or 0) > (pb.roll or 0)
+    end)
+    return names
+end
+
+-- Würfe untereinander: dezente kleine Zeilen „Name · Wahl · Zahl“ unter dem Item
+local function SubLine(r, i)
+    r.sub = r.sub or {}
+    local l = r.sub[i]
+    if l then return l end
+    local function fs(justify)
+        local f = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        f:SetJustifyH(justify); f:SetWordWrap(false)
+        f:SetShadowColor(0, 0, 0, 1); f:SetShadowOffset(1, -1)
+        return f
+    end
+    l = { name = fs("LEFT"), choice = fs("LEFT"), roll = fs("RIGHT") }
+    r.sub[i] = l
+    return l
+end
+local function UpdateList(r)
+    local shown = 0
+    if db.list and not r.winnerOnly then
+        local names = Sorted(r)
+        local max = db.listMax or 5
+        local wide = (db.width or 300) - ROW - 10
+        for i, n in ipairs(names) do
+            if i > max then break end
+            local p, l = r.players[n], SubLine(r, i)
+            local y = -(ROW + 1 + (i - 1) * LINE)
+            l.name:ClearAllPoints(); l.name:SetPoint("TOPLEFT", r, "TOPLEFT", ROW + 3, y); l.name:SetWidth(wide * 0.5)
+            l.choice:ClearAllPoints(); l.choice:SetPoint("TOPLEFT", r, "TOPLEFT", ROW + 3 + wide * 0.5, y); l.choice:SetWidth(wide * 0.32)
+            l.roll:ClearAllPoints(); l.roll:SetPoint("TOPRIGHT", r, "TOPRIGHT", -8, y); l.roll:SetWidth(40)
+            local won, pass = n == r.winner, p.choice == 0
+            l.name:SetText(ShortName(n) .. (won and "  «" or ""))
+            l.choice:SetText(CHOICE_TEXT[p.choice] or "|cff777777…|r")
+            l.roll:SetText(p.roll and tostring(p.roll) or "")
+            if won then l.name:SetTextColor(0.3, 0.85, 0.4); l.roll:SetTextColor(0.3, 0.85, 0.4)
+            elseif pass then l.name:SetTextColor(0.55, 0.55, 0.55); l.roll:SetTextColor(0.55, 0.55, 0.55)
+            else l.name:SetTextColor(0.9, 0.9, 0.9); l.roll:SetTextColor(1, 1, 1) end
+            for _, f in pairs(l) do f:Show() end
+            shown = i
+        end
+        if #names > max then
+            local l = SubLine(r, max + 1)
+            l.name:ClearAllPoints(); l.name:SetPoint("TOPLEFT", r, "TOPLEFT", ROW + 3, -(ROW + 1 + max * LINE)); l.name:SetWidth(wide)
+            l.name:SetText(("|cff999999+%d weitere (Maus über die Zeile)|r"):format(#names - max))
+            l.name:Show(); l.choice:Hide(); l.roll:Hide()
+            shown = max + 1
+        end
+    end
+    for i, l in pairs(r.sub or {}) do if i > shown then for _, f in pairs(l) do f:Hide() end end end
+    r.listH = shown > 0 and (shown * LINE + 4) or 0
+end
+
 local function Note(r, name, choice, roll)
     if not name then return end
     local p = r.players[name]
@@ -279,6 +338,8 @@ local function Note(r, name, choice, roll)
     if choice then p.choice = choice end
     if roll then p.roll = roll end
     UpdateInfo(r)
+    UpdateList(r)
+    if Layout and frame then Layout() end -- Zeile wird höher
 end
 
 local function Fill(r, rollID, info)
@@ -287,6 +348,7 @@ local function Fill(r, rollID, info)
     r.ended, r.removeAt, r.winner, r.allPassed, r.bop = nil, nil, nil, nil, info.bop
     r.itemID = type(info.link) == "string" and tonumber(info.link:match("item:(%d+)")) or nil
     r.players, r.porder = {}, {}
+    UpdateList(r)
     r.icon:SetTexture(info.texture)
     r.count:SetText((info.count or 1) > 1 and info.count or "")
     local c = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[info.quality or 1]
@@ -305,22 +367,24 @@ local function Fill(r, rollID, info)
 end
 
 function Layout()
-    local n = 0
-    for i, id in ipairs(order) do
+    local n, used = 0, 0
+    for _, id in ipairs(order) do
         local r = rows[id]
+        local h = ROW + (r.listH or 0)
         r:ClearAllPoints()
-        r:SetWidth(db.width)
+        r:SetSize(db.width, h)
         if db.grow == "UP" then -- erster Wurf unten, weitere stapeln sich nach oben
-            r:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, (i - 1) * (ROW + GAP))
+            r:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, used)
         else
-            r:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -TopInset() - (i - 1) * (ROW + GAP))
+            r:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -TopInset() - used)
         end
+        used = used + h + GAP
         n = n + 1
     end
     local open = 0
     for _, id in ipairs(order) do local r = rows[id]; if r.choice == nil and not r.ended and not r.removeAt then open = open + 1 end end
     SetTitle(open)
-    frame:SetSize(db.width, TopInset() + math.max(1, n) * (ROW + GAP) - GAP)
+    frame:SetSize(db.width, TopInset() + math.max(ROW, used - GAP))
     if n > 0 or editing then frame:Show() else frame:Hide() end
 end
 
@@ -520,6 +584,17 @@ local function FillMenu(root)
         function() db.hideBlizzard = not db.hideBlizzard; ApplyBlizzard() end)
     root:CreateCheckbox("Zeile nach der Wahl ausblenden", function() return db.hideChosen end,
         function() db.hideChosen = not db.hideChosen end)
+    root:CreateCheckbox("Würfe der anderen untereinander", function() return db.list end, function()
+        db.list = not db.list
+        for _, r in pairs(rows) do UpdateInfo(r); UpdateList(r) end
+        Layout()
+    end)
+    local lm = root:CreateButton("Höchstens Mitspieler-Zeilen")
+    for _, v in ipairs({ 3, 5, 10, 40 }) do
+        lm:CreateRadio(tostring(v), function() return db.listMax == v end, function()
+            db.listMax = v; for _, r in pairs(rows) do UpdateList(r) end; Layout()
+        end)
+    end
     local g = root:CreateButton("Wächst nach")
     for _, d in ipairs({ { "DOWN", "unten" }, { "UP", "oben" } }) do
         g:CreateRadio(d[2], function() return db.grow == d[1] end, function()

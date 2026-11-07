@@ -8,9 +8,9 @@ Installieren:
 Was es macht:
   Sobald ein Item zum Würfeln auftaucht, öffnet sich ein kleines Fenster:
   Symbol, Name, Restzeit, Knöpfe Bedarf / Gier / Entzaubern / Passen.
-  Nach dem Klick bleibt die Zeile stehen und zeigt, was die anderen wählen
-  (B = Bedarf, G = Gier, E = Entzaubern, P = Passen) und würfeln, am Ende den
-  Gewinner. Maus über die Zeile zeigt alle Würfe als Liste.
+  Nach dem Klick bleibt die Zeile stehen. Darunter steht klein für jeden
+  Mitspieler, was er gewählt und gewürfelt hat (Bedarf oben, höchster Wurf
+  zuerst), am Ende ist der Gewinner markiert. Maus über die Zeile zeigt alle.
   Blizzards eigenes Würfelfenster wird dabei ausgeblendet.
 
 Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot menü):
@@ -18,6 +18,7 @@ Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot me
   - Breite
   - Zeile nach der Wahl ausblenden
   - Ergebnis anzeigen: wie lange der Gewinner stehen bleibt
+  - Würfe der anderen untereinander (an/aus) und höchstens wie viele Zeilen
   - Lootfilter: je Qualität (weiß/grün/blau/lila) fragen, automatisch Gier
     oder automatisch passen. Gebundene Items (BoP) fragt es immer.
 
