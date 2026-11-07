@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/logo.png" width="110" alt="Auxy Loot Logo">
+  <img src="https://raw.githubusercontent.com/Auxilias/auxy-loot/main/media/logo.png" width="110" alt="Auxy Loot Logo">
 </p>
 
 <h1 align="center">Auxy Loot</h1>
@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/Auxilias/auxy-loot?label=Version&color=ffd100" alt="Version"></a>
+  <a href="https://github.com/Auxilias/auxy-loot/releases/latest"><img src="https://img.shields.io/github/v/release/Auxilias/auxy-loot?label=Version&color=ffd100" alt="Version"></a>
   <img src="https://img.shields.io/badge/WoW%20Forever-1.60.1-1eff00" alt="WoW Forever 1.60.1">
   <img src="https://img.shields.io/badge/Sprache-Deutsch-lightgrey" alt="Sprache: Deutsch">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/Auxilias/auxy-loot?color=blue" alt="Lizenz"></a>
+  <a href="https://github.com/Auxilias/auxy-loot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Auxilias/auxy-loot?color=blue" alt="Lizenz"></a>
 </p>
 
 Blizzards Würfelfenster ist groß und zeigt nicht, wer was gewählt hat. Auxy Loot ersetzt es durch eine schmale Leiste: Item, Restzeit und die vier Knöpfe. Darunter steht, was die anderen gewählt und gewürfelt haben, und am Ende, wer das Item bekommt.
@@ -30,7 +30,7 @@ Blizzards Würfelfenster ist groß und zeigt nicht, wer was gewählt hat. Auxy L
 
 ## Installation
 
-1. Unter [Releases](../../releases/latest) die `AuxyLoot.zip` herunterladen.
+1. Unter [Releases](https://github.com/Auxilias/auxy-loot/releases/latest) die `AuxyLoot.zip` herunterladen.
 2. Entpacken nach `World of Warcraft\_forever_\Interface\AddOns\`. Danach liegt dort der Ordner `AuxyLoot`.
 3. WoW neu starten.
 
@@ -55,7 +55,7 @@ Verschieben über die goldene Titelzeile. Rechtsklick auf die Titelzeile oder ei
 
 - Die Oberfläche ist auf Deutsch. Der Client darf jede Sprache haben, die Würfe der anderen liest Auxy Loot aus Blizzards Loot-Meldungen.
 - Auxy Loot würfelt nur dann selbst, wenn du den Lootfilter dafür einstellst.
-- Fehler oder Ideen gerne als [Issue](../../issues). Bei Lua-Fehlern hilft der Text aus BugSack.
+- Fehler oder Ideen gerne als [Issue](https://github.com/Auxilias/auxy-loot/issues). Bei Lua-Fehlern hilft der Text aus BugSack.
 
 ## Wie es entstanden ist
 
@@ -63,7 +63,7 @@ Auxy Loot ist ein Hobbyprojekt für meine Gruppe in WoW Forever. Der Code ist gr
 
 ## Lizenz
 
-MIT, siehe [LICENSE](LICENSE).
+MIT, siehe [LICENSE](https://github.com/Auxilias/auxy-loot/blob/main/LICENSE).
 
 ---
 
