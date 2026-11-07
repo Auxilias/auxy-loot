@@ -2,7 +2,7 @@
 ## Title: Auxy Loot
 ## Notes: Kleines, dezentes Würfelfenster: öffnet sich von selbst, wenn ein Item zum Würfeln auftaucht (Bedarf, Gier, Entzaubern, Passen, Restzeit) und zeigt, was die anderen würfeln. Befehl: /auxyloot
 ## Author: Auxilias
-## Version: 1.9
+## Version: 2.0
 ## IconTexture: Interface\Buttons\UI-GroupLoot-Dice-Up
 ## SavedVariables: AuxyLootDB
 

@@ -150,24 +150,45 @@ local function Choose(btn)
     DoChoice(btn:GetParent(), ROLL[btn.key])
 end
 
+-- WoW-Stil (07.11.): Zeile im Tooltip-Rahmen (Rand in Qualitätsfarbe), Symbol mit Qualitätsrahmen,
+-- Restzeit mit Blizzards Balken-Textur. Im Auxy-Stil „OLED“ flach schwarz.
+local function Flat() return ns.Style and ns.Style() == "OLED" end
+local function StyleRow(r)
+    if not r.SetBackdrop then return end
+    if Flat() then
+        r:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
+        r:SetBackdropColor(0, 0, 0, 0.85)
+        r:SetBackdropBorderColor(1, 1, 1, 0.10)
+    else
+        r:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 12, insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+        r:SetBackdropColor(0.03, 0.03, 0.05, 0.9)
+        r:SetBackdropBorderColor(0.6, 0.6, 0.6, 0.9)
+    end
+end
+local function IconBorder(parent)
+    local t = parent:CreateTexture(nil, "OVERLAY")
+    t:SetTexture("Interface\\Common\\WhiteIconFrame")
+    t:SetAllPoints()
+    return t
+end
+
 local function NewRow()
     local r = table.remove(rowPool)
     if r then return r end
     r = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     r:SetSize(db.width, ROW)
-    if r.SetBackdrop then
-        r:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-        r:SetBackdropColor(0, 0, 0, 0.78) -- dunkel genug zum Lesen über hellem Boden
-    end
+    StyleRow(r)
     r:EnableMouse(true)
     r:SetScript("OnMouseUp", function(self, button) if button == "RightButton" and ns.LootMenu then ns.LootMenu(self) end end)
     r:SetScript("OnEnter", PlayersTooltip)
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
     r.iconBtn = CreateFrame("Button", nil, r)
-    r.iconBtn:SetSize(ROW - 6, ROW - 6)
-    r.iconBtn:SetPoint("TOPLEFT", 3, -3)
+    r.iconBtn:SetSize(ROW - 10, ROW - 10)
+    r.iconBtn:SetPoint("TOPLEFT", 5, -5)
     r.icon = r.iconBtn:CreateTexture(nil, "ARTWORK")
     r.icon:SetAllPoints()
+    r.iconBorder = IconBorder(r.iconBtn)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     r.count = r.iconBtn:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     r.count:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -181,7 +202,7 @@ local function NewRow()
         if IsModifiedClick and IsModifiedClick("CHATLINK") and ChatEdit_InsertLink then ChatEdit_InsertLink(link)
         elseif IsModifiedClick and IsModifiedClick("DRESSUP") and DressUpItemLink then DressUpItemLink(link) end
     end)
-    r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     r.name:SetPoint("TOPLEFT", r.iconBtn, "TOPRIGHT", 6, -2)
     r.name:SetJustifyH("LEFT")
     r.name:SetWordWrap(false)
@@ -195,10 +216,12 @@ local function NewRow()
     r.info:SetShadowColor(0, 0, 0, 1); r.info:SetShadowOffset(1, -1)
     -- Restzeit: feiner Balken am unteren Rand
     r.bar = CreateFrame("StatusBar", nil, r)
-    r.bar:SetPoint("TOPLEFT", r, "TOPLEFT", ROW - 1, -(ROW - 3))
-    r.bar:SetPoint("TOPRIGHT", r, "TOPRIGHT", -2, -(ROW - 3))
-    r.bar:SetHeight(2)
-    r.bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+    r.bar:SetPoint("TOPLEFT", r, "TOPLEFT", ROW - 2, -(ROW - 7))
+    r.bar:SetPoint("TOPRIGHT", r, "TOPRIGHT", -6, -(ROW - 7))
+    r.bar:SetHeight(3)
+    r.bar:SetStatusBarTexture(Flat() and "Interface\\Buttons\\WHITE8x8" or "Interface\\TargetingFrame\\UI-StatusBar")
+    local barBg = r.bar:CreateTexture(nil, "BACKGROUND")
+    barBg:SetAllPoints(); barBg:SetColorTexture(0, 0, 0, 0.6)
     r.bar:SetMinMaxValues(0, 1)
     r.buttons = {}
     local x = -3
@@ -360,6 +383,10 @@ local function Fill(r, rollID, info)
     r.name:SetText(info.name or "?")
     if c then r.name:SetTextColor(c.r, c.g, c.b); r.bar:SetStatusBarColor(c.r, c.g, c.b, 0.9)
     else r.name:SetTextColor(1, 1, 1); r.bar:SetStatusBarColor(1, 0.82, 0, 0.9) end
+    -- Qualitätsfarbe für Symbolrahmen und Zeilenrand (wie Blizzards Item-Tooltips)
+    local qr, qg, qb = c and c.r or 0.6, c and c.g or 0.6, c and c.b or 0.6
+    if r.iconBorder then r.iconBorder:SetVertexColor(qr, qg, qb); r.iconBorder:SetShown((info.quality or 1) >= 2) end
+    if r.SetBackdropBorderColor and not Flat() then r:SetBackdropBorderColor(qr, qg, qb, 0.85) end
     UpdateInfo(r)
     SetButton(r.buttons.need, info.canNeed, Reason(info.rN))
     SetButton(r.buttons.greed, info.canGreed, Reason(info.rG))
@@ -550,6 +577,9 @@ local function FeedLayout()
         if l and not fr then
             fr = { icon = feed:CreateTexture(nil, "ARTWORK"), text = feed:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall") }
             fr.icon:SetSize(14, 14); fr.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            fr.border = feed:CreateTexture(nil, "OVERLAY")
+            fr.border:SetTexture("Interface\\Common\\WhiteIconFrame")
+            fr.border:SetPoint("TOPLEFT", fr.icon, "TOPLEFT"); fr.border:SetPoint("BOTTOMRIGHT", fr.icon, "BOTTOMRIGHT")
             fr.text:SetJustifyH("LEFT"); fr.text:SetWordWrap(false)
             fr.text:SetShadowColor(0, 0, 0, 1); fr.text:SetShadowOffset(1, -1)
             feed.rows[i] = fr
@@ -563,8 +593,12 @@ local function FeedLayout()
                 local a = left < 2 and math.max(0, left / 2) or 1
                 fr.icon:SetAlpha(a); fr.text:SetAlpha(a)
                 fr.icon:Show(); fr.text:Show()
+                local c = l.q and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[l.q]
+                if c then fr.border:SetVertexColor(c.r, c.g, c.b) end
+                fr.border:SetAlpha(a)
+                fr.border:SetShown((l.q or 1) >= 2)
             else
-                fr.icon:Hide(); fr.text:Hide()
+                fr.icon:Hide(); fr.text:Hide(); fr.border:Hide()
             end
         end
     end
@@ -577,7 +611,7 @@ local function FeedAdd(name, link, count)
     q = q or tonumber(link:match("|cnIQ(%d)")) -- Forever-Links: Qualität steht im Farbcode
     if q and not secret(q) and q < (db.feedQuality or 0) then return end
     local icon = itemID and GetItemIconByID and GetItemIconByID(itemID) or 134400
-    feedLines[#feedLines + 1] = { icon = icon, till = GetTime() + (db.feedTime or 12),
+    feedLines[#feedLines + 1] = { icon = icon, q = q, till = GetTime() + (db.feedTime or 12),
         text = "|cffdddddd" .. ShortName(name) .. ":|r " .. link .. ((count or 1) > 1 and (" |cffbbbbbb×" .. count .. "|r") or "") }
     FeedLayout()
 end
@@ -639,7 +673,7 @@ local function SaveSession()
                 left = (r.endTime or now) - now, removeIn = r.removeAt and (r.removeAt - now) or nil }
         end
     end
-    for _, l in ipairs(feedLines) do s.feed[#s.feed + 1] = { icon = l.icon, text = l.text, left = l.till - now } end
+    for _, l in ipairs(feedLines) do s.feed[#s.feed + 1] = { icon = l.icon, q = l.q, text = l.text, left = l.till - now } end
     db.session = (#s.rows > 0 or #s.feed > 0) and s or nil
 end
 local function RestoreSession()
@@ -675,7 +709,7 @@ local function RestoreSession()
         end
         for _, l in ipairs(s.feed or {}) do
             local left = (l.left or 0) - gone
-            if left > 0 then feedLines[#feedLines + 1] = { icon = l.icon, text = l.text, till = now + left } end
+            if left > 0 then feedLines[#feedLines + 1] = { icon = l.icon, q = l.q, text = l.text, till = now + left } end
         end
         if feed then FeedLayout() end
     end
