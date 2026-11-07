@@ -18,7 +18,8 @@ end
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
 local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5,
-    autoClose = true, feed = true, feedSelf = false, feedTime = 12, feedMax = 5, feedQuality = 1 }
+    autoClose = true, feed = true, feedSelf = false, feedTime = 12, feedMax = 5, feedQuality = 1, feedRollsOnly = true }
+local rolledItems = {} -- itemID → Zeit des Wurfs (für „Beute der Gruppe: nur gewürfelte Items“)
 local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
 local ROW, GAP, HEAD = 38, 3, 20 -- Zeile: oben Item + Knöpfe, darunter die Würfe der anderen
 -- Lootfilter: je Qualität automatisch würfeln ("greed" | "pass"); gebundene Items (BoP) immer fragen
@@ -441,6 +442,8 @@ end
 
 local function Add(rollID, info, restoring)
     if rows[rollID] or not info then return end
+    local iid = type(info.link) == "string" and tonumber(info.link:match("item:(%d+)"))
+    if iid and rollID > 0 then rolledItems[iid] = GetTime() end -- (Test-Würfe zählen nicht)
     local r = NewRow()
     rows[rollID] = r
     order[#order + 1] = rollID
@@ -605,8 +608,10 @@ local function FeedLayout()
     feed:SetHeight(math.max(1, #feedLines * 16))
     feed:SetShown(#feedLines > 0)
 end
-local function FeedAdd(name, link, count)
+local function FeedAdd(name, link, count, sample)
     local itemID = tonumber(link:match("item:(%d+)"))
+    -- Standard: nur Items, um die gewürfelt wurde (letzte 5 Minuten)
+    if db.feedRollsOnly and not sample and not (itemID and rolledItems[itemID] and GetTime() - rolledItems[itemID] < 300) then return end
     local q = itemID and C_Item and C_Item.GetItemQualityByID and C_Item.GetItemQualityByID(itemID)
     q = q or tonumber(link:match("|cnIQ(%d)")) -- Forever-Links: Qualität steht im Farbcode
     if q and not secret(q) and q < (db.feedQuality or 0) then return end
@@ -802,8 +807,8 @@ local function Test()
         if t[2] == 3 then Note(r, "Thorn", 1, 87); Note(r, "Mira", 2) end
     end
     if feed and db.feed then
-        FeedAdd("Grimbold", "|cffffffff|Hitem:2589::::::::22:::::|h[Linen Cloth]|h|r", 3)
-        FeedAdd("Mira", "|cff1eff00|Hitem:15310::::::::22:::::|h[Feral Gloves]|h|r")
+        FeedAdd("Grimbold", "|cffffffff|Hitem:2589::::::::22:::::|h[Linen Cloth]|h|r", 3, true)
+        FeedAdd("Mira", "|cff1eff00|Hitem:15310::::::::22:::::|h[Feral Gloves]|h|r", nil, true)
     end
     msg("Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich).")
 end
@@ -871,6 +876,8 @@ local function FillMenu(root)
     local fd = root:CreateButton("Beute der Gruppe")
     fd:CreateCheckbox("Anzeigen (wer hat was eingesammelt)", function() return db.feed end, function() db.feed = not db.feed
         if not db.feed then feedLines = {}; if feed then FeedLayout() end end end)
+    fd:CreateCheckbox("Nur Items, um die gewürfelt wurde", function() return db.feedRollsOnly end,
+        function() db.feedRollsOnly = not db.feedRollsOnly end)
     fd:CreateCheckbox("Eigene Beute auch zeigen", function() return db.feedSelf end, function() db.feedSelf = not db.feedSelf end)
     local fq = fd:CreateButton("Ab Qualität")
     for _, q in ipairs({ { 0, "alles (auch grau)" }, { 1, "weiß" }, { 2, "grün" }, { 3, "blau" } }) do

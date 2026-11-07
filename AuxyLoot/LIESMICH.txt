@@ -12,8 +12,8 @@ Was es macht:
   Mitspieler, was er gewählt und gewürfelt hat (Bedarf oben, höchster Wurf
   zuerst), am Ende ist der Gewinner markiert. Maus über die Zeile zeigt alle.
   Blizzards eigenes Würfelfenster wird dabei ausgeblendet.
-  Darunter zeigt eine kleine Liste "Beute der Gruppe", wer was eingesammelt hat
-  (blendet nach ein paar Sekunden aus).
+  Darunter zeigt eine kleine Liste "Beute der Gruppe", wer die gewürfelten Items
+  bekommen hat (blendet nach ein paar Sekunden aus; auf Wunsch alle Beute).
   Das Beutefenster der Leiche schließt sich von selbst, sobald nur noch
   gewürfelt wird – sonst reagiert WoW kaum auf Rechtsklicks in die Welt.
   Das Würfeln läuft trotzdem weiter.
@@ -27,7 +27,8 @@ Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot me
   - Ergebnis anzeigen: wie lange der Gewinner stehen bleibt
   - Würfe der anderen untereinander (an/aus) und höchstens wie viele Zeilen
   - Beutefenster automatisch schließen (an/aus)
-  - Beute der Gruppe: an/aus, eigene Beute, ab Qualität, Anzeigedauer
+  - Beute der Gruppe: an/aus, nur gewürfelte Items, eigene Beute, ab Qualität,
+    Anzeigedauer
   - Lootfilter: je Qualität (weiß/grün/blau/lila) fragen, automatisch Gier
     oder automatisch passen. Gebundene Items (BoP) fragt es immer.
 
