@@ -13,7 +13,7 @@ Was es macht:
   Gewinner. Maus über die Zeile zeigt alle Würfe als Liste.
   Blizzards eigenes Würfelfenster wird dabei ausgeblendet.
 
-Einstellungen (Rechtsklick auf die Titelzeile oder /auxyloot menü):
+Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot menü):
   - Wächst nach unten oder oben
   - Breite
   - Zeile nach der Wahl ausblenden

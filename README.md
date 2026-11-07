@@ -26,7 +26,7 @@ Kleines, dezentes Würfelfenster für **WoW Forever** (Gruppen-Loot).
 | `/auxyloot blizzard` | Blizzards Würfelfenster wieder an/aus |
 | `/auxyloot reset` | Position zurücksetzen |
 
-Verschieben: goldene Titelzeile ziehen.
+Verschieben: goldene Titelzeile ziehen. Rechtsklick auf Titelzeile oder eine Zeile: Einstellungen.
 
 ## Hinweise
 

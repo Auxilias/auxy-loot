@@ -116,6 +116,7 @@ local function PlayersTooltip(r)
         return (pa.roll or 0) > (pb.roll or 0)
     end)
     if #names == 0 then GameTooltip:AddLine("Noch keine Wahl der anderen.", 0.6, 0.6, 0.6) end
+    GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.5, 0.5, 0.5)
     for _, n in ipairs(names) do
         local p = r.players[n]
         GameTooltip:AddDoubleLine(n:gsub("%-.*$", "") .. (n == r.winner and "  |cff4cd964(gewonnen)|r" or ""),
@@ -158,6 +159,7 @@ local function NewRow()
         r:SetBackdropColor(0, 0, 0, 0.78) -- dunkel genug zum Lesen über hellem Boden
     end
     r:EnableMouse(true)
+    r:SetScript("OnMouseUp", function(self, button) if button == "RightButton" and ns.LootMenu then ns.LootMenu(self) end end)
     r:SetScript("OnEnter", PlayersTooltip)
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
     r.iconBtn = CreateFrame("Button", nil, r)
@@ -170,7 +172,9 @@ local function NewRow()
     r.count:SetPoint("BOTTOMRIGHT", -1, 1)
     r.iconBtn:SetScript("OnEnter", RowTooltip)
     r.iconBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    r.iconBtn:SetScript("OnClick", function(self)
+    if r.iconBtn.RegisterForClicks then r.iconBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp") end
+    r.iconBtn:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then if ns.LootMenu then ns.LootMenu(self) end; return end
         local link = self:GetParent().link
         if not link then return end
         if IsModifiedClick and IsModifiedClick("CHATLINK") and ChatEdit_InsertLink then ChatEdit_InsertLink(link)
@@ -585,6 +589,7 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
             OwnChrome(frame)
         end
         frame:SetScript("OnUpdate", OnUpdate)
+        frame.auxyMenu = function(owner) ns.LootMenu(owner) end -- Rechtsklick auf die Titelleiste (Suite)
         Place()
         for _, e in ipairs({ "START_LOOT_ROLL", "CANCEL_LOOT_ROLL", "CANCEL_ALL_LOOT_ROLLS", "PLAYER_LOGIN", "CHAT_MSG_LOOT" }) do
             pcall(self.RegisterEvent, self, e)
