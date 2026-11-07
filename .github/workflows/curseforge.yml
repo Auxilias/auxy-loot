@@ -27,7 +27,10 @@ jobs:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
         run: |
           curl -fsS -H "X-Api-Token: $CF_API_KEY" https://wow.curseforge.com/api/game/versions \
-            | jq -r '.[] | "\(.id)\t\(.gameVersionTypeID)\t\(.name)"' | sort -k3 -V | tail -60
+            | jq -r '.[] | select(.gameVersionTypeID != 517) | "\(.id)\t\(.gameVersionTypeID)\t\(.name)"' | sort -k2n -k3V
+          echo "--- Typen"
+          curl -fsS -H "X-Api-Token: $CF_API_KEY" https://wow.curseforge.com/api/game/version-types \
+            | jq -r '.[] | "\(.id)\t\(.name)"'
           grep '^## Interface' AuxyLoot/AuxyLoot.toc
       - name: Zip bauen und hochladen
         if: github.event_name == 'release' || inputs.mode == 'upload'
