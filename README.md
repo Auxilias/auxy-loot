@@ -30,6 +30,10 @@ Blizzards Würfelfenster ist groß und zeigt nicht, wer was gewählt hat. Auxy L
 
 ## Installation
 
+**Mit Wago:** [addons.wago.io/addons/auxy-loot](https://addons.wago.io/addons/auxy-loot), dort kommen neue Versionen automatisch an.
+
+**Von Hand:**
+
 1. Unter [Releases](https://github.com/Auxilias/auxy-loot/releases/latest) die `AuxyLoot.zip` herunterladen.
 2. Entpacken nach `World of Warcraft\_forever_\Interface\AddOns\`. Danach liegt dort der Ordner `AuxyLoot`.
 3. WoW neu starten.
