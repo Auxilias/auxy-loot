@@ -547,6 +547,39 @@ local function ApplyBlizzard()
     end
 end
 
+-- ---------------------------------------------------------------- Maus-Diagnose (/auxyloot diagnose)
+-- Meldet bei jedem Rechtsklick, welches Fenster unter der Maus den Klick bekommt (07.11.: Rechtsklick in die
+-- Welt ging nicht, solange gewürfelt wurde). Nur bis zum nächsten /reload an.
+local diagFrame
+local function FrameName(f)
+    if not f then return "?" end
+    local ok, n = pcall(function() return (f.GetDebugName and f:GetDebugName()) or (f.GetName and f:GetName()) end)
+    return ok and n and n ~= "" and tostring(n) or tostring(f)
+end
+local function MouseReport(button)
+    local foci = GetMouseFoci and GetMouseFoci() or { GetMouseFocus and GetMouseFocus() or nil }
+    local names = {}
+    for _, f in ipairs(foci or {}) do if f and f ~= WorldFrame then names[#names + 1] = FrameName(f) end end
+    local blizz = false
+    for i = 1, (NUM_GROUP_LOOT_FRAMES or 4) do local g = _G["GroupLootFrame" .. i]; if g and g:IsShown() then blizz = true end end
+    local loot = LootFrame and LootFrame:IsShown()
+    local cont = GroupLootContainer and GroupLootContainer:IsShown() and (GroupLootContainer.IsMouseEnabled and GroupLootContainer:IsMouseEnabled())
+    local t = ("%s über: %s · Würfelfenster %s · Blizzard-Würfeln %s · Beutefenster %s%s"):format(button,
+        #names > 0 and table.concat(names, ", ") or "Welt (kein Fenster)", frame and frame:IsShown() and "offen" or "zu",
+        blizz and "SICHTBAR" or "aus", loot and "OFFEN" or "zu", cont and " · GroupLootContainer fängt Maus" or "")
+    msg(t)
+    if ns.Log then ns.Log("Loot", t) end
+end
+local function ToggleDiag()
+    if not diagFrame then
+        diagFrame = CreateFrame("Frame")
+        diagFrame:SetScript("OnEvent", function(_, _, button) if button == "RightButton" then MouseReport("Rechtsklick") end end)
+    end
+    diagFrame.on = not diagFrame.on
+    if diagFrame.on then pcall(diagFrame.RegisterEvent, diagFrame, "GLOBAL_MOUSE_DOWN") else diagFrame:UnregisterEvent("GLOBAL_MOUSE_DOWN") end
+    msg("Maus-Diagnose " .. (diagFrame.on and "AN – jetzt beim Würfeln in die Welt rechtsklicken; die Meldung zeigt, was den Klick abfängt." or "aus"))
+end
+
 -- ---------------------------------------------------------------- Test + Befehle
 local testID = 0
 local TEST = { { 2589, 4, 1 }, { 14119, 2, 1, true }, { 15310, 3, 1, false, true } } -- itemID, Qualität, …
@@ -570,6 +603,7 @@ local function Command(arg)
     if arg == "test" or arg == "" then return Test() end
     if arg == "reset" then db.point = nil; db.scale = 1; Place(); return msg("Position zurückgesetzt.") end
     if arg == "menü" or arg == "menu" or arg == "optionen" then return ns.LootMenu() end
+    if arg == "diagnose" or arg == "maus" then return ToggleDiag() end
     if arg == "oben" or arg == "unten" then db.grow = arg == "oben" and "UP" or "DOWN"; SavePoint(); Place(); Layout(); return msg("Wächst nach " .. arg .. ".") end
     if arg == "blizzard" then
         db.hideBlizzard = not db.hideBlizzard; ApplyBlizzard()
