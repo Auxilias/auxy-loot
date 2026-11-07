@@ -457,7 +457,11 @@ end
 -- ---------------------------------------------------------------- Würfe der anderen (Loot-Chat)
 -- Blizzards eigene Texte (LOOT_ROLL_…) werden zu Mustern; so klappt es in jeder Sprache.
 local PATTERNS
+-- Forever stellt den Meldungen einen Verweis auf die Loot-Liste voran: „|HlootHistory:233239809|h[Loot]|h: …“.
+-- Der fliegt raus, bevor ausgewertet wird (seine Nummer ist kein Wurf).
+local function StripHistory(t) return (t:gsub("|HlootHistory:[^|]*|h.-|h:?%s*", "")) end
 local function ToPattern(fmt)
+    fmt = fmt:gsub("|HlootHistory:%%d|h.-|h:?%s*", "")
     local p = fmt:gsub("%%%d%$", "%%"):gsub("([%(%)%.%+%-%*%?%[%]%^%$])", "%%%1")
     p = p:gsub("%%s", "(.+)"):gsub("%%d", "(%%d+)")
     return "^" .. p .. "$"
@@ -493,13 +497,14 @@ end
 local function OnLootChat(text)
     if type(text) ~= "string" or secret(text) then return end
     if not PATTERNS then BuildPatterns() end
+    text = StripHistory(text)
     for _, pt in ipairs(PATTERNS) do
         local caps = { text:match(pt[1]) }
         if #caps > 0 then
             local link, roll, name
             for _, c in ipairs(caps) do
                 if c:find("|H", 1, true) then link = c
-                elseif not roll and tonumber(c) then roll = tonumber(c)
+                elseif not roll and tonumber(c) and tonumber(c) >= 1 and tonumber(c) <= 100 then roll = tonumber(c) -- Würfe 1–100
                 else name = c end
             end
             if pt.self then name = UnitName("player") end
