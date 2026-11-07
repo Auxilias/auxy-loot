@@ -1,5 +1,8 @@
 # Änderungen
 
+## 2.1.1.1
+- LIESMICH neu geschrieben (mit Wago-Link). Am Addon selbst hat sich nichts geändert.
+
 ## 2.1.1
 - LIESMICH ohne alte Versionsnummer.
 - Auxy Loot gibt es jetzt auch auf [Wago](https://addons.wago.io/addons/auxy-loot).
