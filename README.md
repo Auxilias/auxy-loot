@@ -30,7 +30,7 @@ Blizzards Würfelfenster ist groß und zeigt nicht, wer was gewählt hat. Auxy L
 
 ## Installation
 
-**Mit Wago:** [addons.wago.io/addons/auxy-loot](https://addons.wago.io/addons/auxy-loot), dort kommen neue Versionen automatisch an.
+**Mit Wago:** [addons.wago.io/addons/auxy-loot](https://addons.wago.io/addons/auxy-loot). Neue Versionen erscheinen dort automatisch.
 
 **Von Hand:**
 
@@ -60,6 +60,10 @@ Verschieben über die goldene Titelzeile. Rechtsklick auf die Titelzeile oder ei
 - Die Oberfläche ist auf Deutsch. Der Client darf jede Sprache haben, die Würfe der anderen liest Auxy Loot aus Blizzards Loot-Meldungen.
 - Auxy Loot würfelt nur dann selbst, wenn du den Lootfilter dafür einstellst.
 - Fehler oder Ideen gerne als [Issue](https://github.com/Auxilias/auxy-loot/issues). Bei Lua-Fehlern hilft der Text aus BugSack.
+
+## Änderungen
+
+Was in welcher Version neu ist, steht im [CHANGELOG](https://github.com/Auxilias/auxy-loot/blob/main/CHANGELOG.md).
 
 ## Wie es entstanden ist
 

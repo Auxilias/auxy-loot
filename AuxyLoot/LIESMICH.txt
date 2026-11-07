@@ -1,42 +1,42 @@
 Auxy Loot – Würfelfenster für Gruppen-Loot in WoW Forever
 
-Installieren:
+Installieren
   Den Ordner "AuxyLoot" (aus der zip) nach
   World of Warcraft\_forever_\Interface\AddOns\
   kopieren, dann WoW neu starten.
+  Oder über Wago: https://addons.wago.io/addons/auxy-loot
 
-Was es macht:
-  Sobald ein Item zum Würfeln auftaucht, öffnet sich ein kleines Fenster:
-  Symbol, Name, Restzeit, Knöpfe Bedarf / Gier / Entzaubern / Passen.
-  Nach dem Klick bleibt die Zeile stehen. Darunter steht klein für jeden
-  Mitspieler, was er gewählt und gewürfelt hat (Bedarf oben, höchster Wurf
-  zuerst), am Ende ist der Gewinner markiert. Maus über die Zeile zeigt alle.
-  Blizzards eigenes Würfelfenster wird dabei ausgeblendet.
-  Darunter zeigt eine kleine Liste "Beute der Gruppe", wer die gewürfelten Items
-  bekommen hat (blendet nach ein paar Sekunden aus; auf Wunsch alle Beute).
-  Das Beutefenster der Leiche schließt sich von selbst, sobald nur noch
-  gewürfelt wird – sonst reagiert WoW kaum auf Rechtsklicks in die Welt.
-  Das Würfeln läuft trotzdem weiter.
-  Ein /reload übersteht das Fenster: Würfe, Wahl der anderen und die
-  Beute-Liste sind danach wieder da.
+Was es macht
+  Sobald gewürfelt wird, geht ein schmales Fenster auf: Item-Symbol, Name,
+  Restzeit und die Knöpfe Bedarf, Gier, Entzaubern, Passen. Was gerade nicht
+  geht, ist ausgegraut.
+  Unter jedem Item steht, was die anderen gewählt und gewürfelt haben
+  (Bedarf oben, höchster Wurf zuerst). Am Ende wird der Gewinner markiert.
+  Maus über die Zeile zeigt die ganze Liste.
+  "Beute der Gruppe" zeigt kurz, wer die ausgewürfelten Items bekommen hat.
+  Liegen in der Leiche nur noch Items zum Würfeln, schließt sich das
+  Beutefenster. Sonst nimmt WoW keine Rechtsklicks in die Welt an.
+  Nach /reload ist alles wieder da.
 
-Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot menü):
-  - Wächst nach unten oder oben
-  - Breite
-  - Zeile nach der Wahl ausblenden
-  - Ergebnis anzeigen: wie lange der Gewinner stehen bleibt
-  - Würfe der anderen untereinander (an/aus) und höchstens wie viele Zeilen
-  - Beutefenster automatisch schließen (an/aus)
-  - Beute der Gruppe: an/aus, nur gewürfelte Items, eigene Beute, ab Qualität,
-    Anzeigedauer
-  - Lootfilter: je Qualität (weiß/grün/blau/lila) fragen, automatisch Gier
-    oder automatisch passen. Gebundene Items (BoP) fragt es immer.
+Einstellungen (Rechtsklick auf die Titelzeile oder /auxyloot menü)
+  - Richtung (wächst nach unten oder oben), Breite, Größe
+  - Zeile nach der Wahl ausblenden, wie lange der Gewinner stehen bleibt
+  - Würfe der anderen an/aus und wie viele Zeilen
+  - Beutefenster automatisch schließen
+  - Beute der Gruppe: an/aus, nur gewürfelte Items, eigene Beute,
+    ab Qualität, Anzeigedauer
+  - Lootfilter je Qualität: fragen, automatisch Gier oder automatisch
+    passen. Bei gebundenen Items (BoP) wird immer gefragt. Ab Werk aus.
 
-Befehle:
-  /auxyloot            Test mit drei Beispiel-Würfen
+Befehle
+  /auxyloot test       drei Beispiel-Würfe (es wird nicht gewürfelt)
   /auxyloot menü       Einstellungen
-  /auxyloot oben|unten Wachstumsrichtung
-  /auxyloot blizzard   Blizzards Würfelfenster wieder an/aus
-  /auxyloot reset      Position zurücksetzen
+  /auxyloot oben|unten Richtung
   /auxyloot groß 1.2   Größe (0.6 bis 2)
-  Fenster an der goldenen Titelzeile verschieben.
+  /auxyloot blizzard   Blizzards Würfelfenster wieder ein/aus
+  /auxyloot reset      Position zurücksetzen
+  Verschieben: goldene Titelzeile ziehen.
+
+Fehler und Ideen: https://github.com/Auxilias/auxy-loot/issues
+Der Code ist größtenteils mit KI geschrieben (Claude von Anthropic),
+getestet wird im Spiel. Lizenz: MIT, siehe LICENSE.
