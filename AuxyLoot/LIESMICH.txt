@@ -17,6 +17,8 @@ Was es macht:
   Das Beutefenster der Leiche schließt sich von selbst, sobald nur noch
   gewürfelt wird – sonst reagiert WoW kaum auf Rechtsklicks in die Welt.
   Das Würfeln läuft trotzdem weiter.
+  Ein /reload übersteht das Fenster: Würfe, Wahl der anderen und die
+  Beute-Liste sind danach wieder da.
 
 Einstellungen (Rechtsklick auf die Titelzeile oder eine Zeile, oder /auxyloot menü):
   - Wächst nach unten oder oben

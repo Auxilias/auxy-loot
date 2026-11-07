@@ -10,6 +10,7 @@ Kleines, dezentes Würfelfenster für **WoW Forever** (Gruppen-Loot).
 - Schließt das Beutefenster der Leiche, sobald nur noch gewürfelt wird – sonst blockiert WoW Rechtsklicks in die Welt (abschaltbar; das Würfeln läuft weiter)
 - **Lootfilter:** je Qualität fragen, automatisch Gier oder automatisch passen – gebundene Items (BoP) fragt es immer
 - Wächst nach unten oder oben, Breite und Größe einstellbar, Zeile nach der Wahl optional ausblenden
+- Übersteht `/reload`: laufende Würfe, die Wahl der anderen und die Beute-Liste sind danach wieder da
 
 ## Installieren
 

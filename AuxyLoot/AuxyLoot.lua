@@ -131,14 +131,18 @@ end
 
 local Remove, Layout
 -- Wahl ausführen (Klick oder Lootfilter); auto = vom Filter
-local function DoChoice(r, kind, auto)
-    if r.rollID and r.rollID > 0 and RollOnLoot then RollOnLoot(r.rollID, kind) end
-    if db.hideChosen then return Remove(r.rollID) end
-    r.choice = kind
+-- gewählte Zeile anzeigen (auch nach /reload wiederhergestellt)
+local function ShowChoice(r, kind, auto)
+    r.choice, r.autoChoice = kind, auto
     r.choiceText:SetText("» " .. CHOICE_TEXT[kind] .. (auto and " |cff999999(Filter)|r" or ""))
     for _, b in pairs(r.buttons) do b:Hide() end
     r.choiceText:Show()
     r:SetAlpha(0.55)
+end
+local function DoChoice(r, kind, auto)
+    if r.rollID and r.rollID > 0 and RollOnLoot then RollOnLoot(r.rollID, kind) end
+    if db.hideChosen then return Remove(r.rollID) end
+    ShowChoice(r, kind, auto)
     Layout() -- Zähler im Titel
 end
 local function Choose(btn)
@@ -344,7 +348,7 @@ local function Note(r, name, choice, roll)
 end
 
 local function Fill(r, rollID, info)
-    r.rollID, r.link, r.total, r.choice = rollID, info.link, info.total, nil
+    r.rollID, r.link, r.total, r.choice, r.src = rollID, info.link, info.total, nil, info
     r.endTime = GetTime() + (info.left or info.total or 60)
     r.ended, r.removeAt, r.winner, r.allPassed, r.bop = nil, nil, nil, nil, info.bop
     r.itemID = type(info.link) == "string" and tonumber(info.link:match("item:(%d+)")) or nil
@@ -408,13 +412,14 @@ local function ReadRoll(rollID, rollTime)
         link = GetLootRollItemLink and GetLootRollItemLink(rollID), total = (rollTime or 60000) / 1000 }
 end
 
-local function Add(rollID, info)
+local function Add(rollID, info, restoring)
     if rows[rollID] or not info then return end
     local r = NewRow()
     rows[rollID] = r
     order[#order + 1] = rollID
     Fill(r, rollID, info)
     Layout()
+    if restoring then return r end -- nach /reload: Filter hat schon gewürfelt
     -- Lootfilter (nie bei gebundenen Items)
     local rule = db.auto and db.auto[info.quality or -1]
     if rule and not info.bop then
@@ -617,6 +622,68 @@ local function SoonCheckLoot()
     local mine = closeGen
     -- kurz warten: schnelles/automatisches Plündern nimmt erst alles Freie
     C_Timer.After(0.4, function() if mine == closeGen then CheckLootWindow() end end)
+end
+
+-- ---------------------------------------------------------------- /reload überleben
+-- Beim Abmelden/Neuladen (PLAYER_LOGOUT) wird der Stand gespeichert, beim Login (PLAYER_LOGIN) wiederhergestellt:
+-- Zeilen mit Wahl, Würfen der anderen, Gewinner, Restzeit und die Beute-Liste. Älter als 5 Minuten = verworfen.
+local function Epoch() return (time and time()) or 0 end
+local function SaveSession()
+    local now = GetTime()
+    local s = { at = Epoch(), rows = {}, feed = {} }
+    for _, id in ipairs(order) do
+        local r = rows[id]
+        if r and id > 0 and r.src then
+            s.rows[#s.rows + 1] = { id = id, info = r.src, choice = r.choice, auto = r.autoChoice, players = r.players,
+                porder = r.porder, winner = r.winner, allPassed = r.allPassed, ended = r.ended, total = r.total,
+                left = (r.endTime or now) - now, removeIn = r.removeAt and (r.removeAt - now) or nil }
+        end
+    end
+    for _, l in ipairs(feedLines) do s.feed[#s.feed + 1] = { icon = l.icon, text = l.text, left = l.till - now } end
+    db.session = (#s.rows > 0 or #s.feed > 0) and s or nil
+end
+local function RestoreSession()
+    local s = db.session
+    db.session = nil
+    local active = {}
+    if GetActiveLootRollIDs then for _, id in ipairs(GetActiveLootRollIDs() or {}) do active[id] = true end end
+    if s and s.at and Epoch() - s.at < 300 then
+        local gone = Epoch() - s.at
+        local now = GetTime()
+        for _, e in ipairs(s.rows or {}) do
+            local left = (e.left or 0) - gone
+            local keep = active[e.id] or (e.removeIn and e.removeIn - gone > 0) or (not e.removeIn and left > -1)
+            local info = active[e.id] and ReadRoll(e.id, GetLootRollTimeLeft and GetLootRollTimeLeft(e.id)) or e.info
+            if keep and info then
+                info.left = math.max(0, left)
+                info.total = e.total or info.total
+                local r = Add(e.id, info, true)
+                if r then
+                    r.players, r.porder = e.players or {}, e.porder or {}
+                    r.winner, r.allPassed = e.winner, e.allPassed
+                    r.ended = e.ended or not active[e.id]
+                    if e.choice ~= nil then ShowChoice(r, e.choice, e.auto)
+                    elseif r.ended then for _, b in pairs(r.buttons) do b:Hide() end end
+                    if e.removeIn then
+                        r.removeAt = now + math.max(1, e.removeIn - gone)
+                        for _, b in pairs(r.buttons) do b:Hide() end
+                        r:SetAlpha(0.75)
+                    end
+                    UpdateInfo(r); UpdateList(r)
+                end
+            end
+        end
+        for _, l in ipairs(s.feed or {}) do
+            local left = (l.left or 0) - gone
+            if left > 0 then feedLines[#feedLines + 1] = { icon = l.icon, text = l.text, till = now + left } end
+        end
+        if feed then FeedLayout() end
+    end
+    -- noch offene Würfe, die nicht gespeichert waren
+    for id in pairs(active) do
+        if not rows[id] then Add(id, ReadRoll(id, (GetLootRollTimeLeft and GetLootRollTimeLeft(id)) or 60000), true) end
+    end
+    Layout()
 end
 
 -- ---------------------------------------------------------------- Blizzard-Würfelfenster
@@ -835,18 +902,13 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
         feed:SetScript("OnUpdate", function(_, el) facc = facc + el; if facc >= 0.25 then facc = 0; FeedLayout() end end)
         Place()
         for _, e in ipairs({ "START_LOOT_ROLL", "CANCEL_LOOT_ROLL", "CANCEL_ALL_LOOT_ROLLS", "PLAYER_LOGIN", "CHAT_MSG_LOOT",
-            "LOOT_OPENED", "LOOT_SLOT_CLEARED" }) do
+            "LOOT_OPENED", "LOOT_SLOT_CLEARED", "PLAYER_LOGOUT" }) do
             pcall(self.RegisterEvent, self, e)
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGIN" then
         ApplyBlizzard()
-        -- nach /reload: noch offene Würfe übernehmen
-        if GetActiveLootRollIDs then
-            for _, id in ipairs(GetActiveLootRollIDs() or {}) do
-                Add(id, ReadRoll(id, (GetLootRollTimeLeft and GetLootRollTimeLeft(id)) or 60000))
-            end
-        end
+        RestoreSession() -- nach /reload: Stand des Fensters wiederherstellen
     elseif event == "START_LOOT_ROLL" then
         Add(a1, ReadRoll(a1, a2))
     elseif event == "CANCEL_LOOT_ROLL" then
@@ -858,6 +920,8 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
     elseif event == "CHAT_MSG_LOOT" then
         OnLootChat(a1)
         OnFeedChat(a1)
+    elseif event == "PLAYER_LOGOUT" then
+        SaveSession()
     elseif event == "LOOT_OPENED" or event == "LOOT_SLOT_CLEARED" then
         SoonCheckLoot()
     end
