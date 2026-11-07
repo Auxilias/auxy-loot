@@ -1,5 +1,8 @@
 # Änderungen
 
+## 2.2
+- Englische Oberfläche: Deutsch bei deutschem Client, sonst Englisch; englische Befehlswörter (up/down, size). Upload zu CurseForge. / English UI on non-German clients, English command aliases (up/down, size), now also on CurseForge.
+
 ## 2.1.1.1
 - LIESMICH neu geschrieben (mit Wago-Link). Am Addon selbst hat sich nichts geändert.
 

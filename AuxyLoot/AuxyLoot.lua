@@ -15,6 +15,70 @@ if ADDON ~= "AuxyLoot" and C_AddOns and C_AddOns.GetAddOnEnableState then
     if ok and type(state) == "number" and state > 0 and loadable then return end
 end
 
+-- Sprache: Deutsch (deDE) im Code als Schlüssel, alle anderen Clients bekommen Englisch. Fehlt ein Eintrag → deutscher Text.
+local L = setmetatable({}, { __index = function(_, k) return k end })
+if GetLocale and GetLocale() ~= "deDE" then
+    for de, en in pairs({
+        ["Bedarf"] = "Need",
+        ["Gier"] = "Greed",
+        ["Entzaubern"] = "Disenchant",
+        ["Passen"] = "Pass",
+        ["Entz."] = "Disench.",
+        ["Würfeln"] = "Rolling",
+        ["Gewöhnlich (weiß)"] = "Common (white)",
+        ["Ungewöhnlich (grün)"] = "Uncommon (green)",
+        ["Selten (blau)"] = "Rare (blue)",
+        ["Episch (lila)"] = "Epic (purple)",
+        ["Fragen"] = "Ask",
+        ["Automatisch Gier"] = "Auto greed",
+        ["Automatisch passen"] = "Auto pass",
+        ["Noch keine Wahl der anderen."] = "No choices from the others yet.",
+        ["Rechtsklick: Einstellungen"] = "Right-click: settings",
+        ["gewonnen"] = "won",
+        ["Filter"] = "filter",
+        ["Nicht möglich"] = "Not possible",
+        ["» %s gewinnt%s"] = "» %s wins%s",
+        ["Alle haben gepasst"] = "Everyone passed",
+        ["gebunden"] = "Bound",
+        ["+%d weitere (Maus über die Zeile)"] = "+%d more (hover the row)",
+        ["vorbei"] = "over",
+        ["Test-Item "] = "Test item ",
+        ["Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich)."] = "Test: three example rolls for 30 s with made-up players (clicks don't really roll here).",
+        ["Position zurückgesetzt."] = "Position reset.",
+        ["Wächst nach oben."] = "Grows upwards.",
+        ["Wächst nach unten."] = "Grows downwards.",
+        ["Blizzards Würfelfenster aus (nur Auxy Loot)."] = "Blizzard's roll frame off (Auxy Loot only).",
+        ["Blizzards Würfelfenster wieder an."] = "Blizzard's roll frame on again.",
+        ["Größe "] = "Size ",
+        ["/auxyloot – test · menü (Einstellungen, Lootfilter) · oben/unten (Wachstum) · reset · blizzard · groß 1.2 (Größe 0.6–2). Titelzeile ziehen = verschieben, Rechtsklick = Einstellungen."] = "/auxyloot – test · menu (settings, loot filter) · up/down (growth) · reset · blizzard · size 1.2 (size 0.6–2). Drag the title bar to move, right-click for settings.",
+        ["Blizzards Würfelfenster ausblenden"] = "Hide Blizzard's roll frame",
+        ["Zeile nach der Wahl ausblenden"] = "Hide row after choosing",
+        ["Würfe der anderen untereinander"] = "List the others' rolls under the item",
+        ["Höchstens Mitspieler-Zeilen"] = "Max. player rows",
+        ["Wächst nach"] = "Grows",
+        ["unten"] = "down",
+        ["oben"] = "up",
+        ["Ergebnis anzeigen"] = "Show result for",
+        ["nicht"] = "not",
+        ["Breite"] = "Width",
+        ["Lootfilter (nicht bei gebundenen Items)"] = "Loot filter (never for bind-on-pickup)",
+        ["Beutefenster schließen, wenn nur noch gewürfelt wird"] = "Close loot window when only rolls are left",
+        ["Beute der Gruppe"] = "Group loot",
+        ["Anzeigen (wer hat was eingesammelt)"] = "Show (who looted what)",
+        ["Nur Items, um die gewürfelt wurde"] = "Only items that were rolled on",
+        ["Eigene Beute auch zeigen"] = "Show my own loot too",
+        ["Ab Qualität"] = "From quality",
+        ["alles (auch grau)"] = "all (incl. grey)",
+        ["weiß"] = "white",
+        ["grün"] = "green",
+        ["blau"] = "blue",
+        ["Stehen lassen"] = "Keep for",
+        ["Test (3 Beispiel-Würfe)"] = "Test (3 example rolls)",
+        ["Position zurücksetzen"] = "Reset position",
+        ["Auxy Loot (Würfelfenster)"] = "Auxy Loot (roll window)",
+    }) do L[de] = en end
+end
+
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
 local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5,
@@ -23,16 +87,16 @@ local rolledItems = {} -- itemID → Zeit des Wurfs (für „Beute der Gruppe: n
 local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
 local ROW, GAP, HEAD = 38, 3, 20 -- Zeile: oben Item + Knöpfe, darunter die Würfe der anderen
 -- Lootfilter: je Qualität automatisch würfeln ("greed" | "pass"); gebundene Items (BoP) immer fragen
-local FILTER_Q = { { 1, "Gewöhnlich (weiß)" }, { 2, "Ungewöhnlich (grün)" }, { 3, "Selten (blau)" }, { 4, "Episch (lila)" } }
-local FILTER_DO = { { nil, "Fragen" }, { "greed", "Automatisch Gier" }, { "pass", "Automatisch passen" } }
+local FILTER_Q = { { 1, L["Gewöhnlich (weiß)"] }, { 2, L["Ungewöhnlich (grün)"] }, { 3, L["Selten (blau)"] }, { 4, L["Episch (lila)"] } }
+local FILTER_DO = { { nil, L["Fragen"] }, { "greed", L["Automatisch Gier"] }, { "pass", L["Automatisch passen"] } }
 local ROLL = { need = 1, greed = 2, de = 3, pass = 0 }
 local SORT = { [1] = 1, [2] = 2, [3] = 3, [0] = 4 }
-local CHOICE_TEXT = { [1] = "|cff4cd964Bedarf|r", [2] = "|cffffd100Gier|r", [3] = "|cffb48cffEntzaubern|r", [0] = "|cff999999Passen|r" }
+local CHOICE_TEXT = { [1] = "|cff4cd964" .. L["Bedarf"] .. "|r", [2] = "|cffffd100" .. L["Gier"] .. "|r", [3] = "|cffb48cff" .. L["Entzaubern"] .. "|r", [0] = "|cff999999" .. L["Passen"] .. "|r" }
 local BUTTONS = { -- Reihenfolge rechts » links: Passen ganz rechts
-    { key = "pass", tex = "Interface\\Buttons\\UI-GroupLoot-Pass", tip = "Passen" },
-    { key = "de", tex = "Interface\\Buttons\\UI-GroupLoot-DE", tip = "Entzaubern" },
-    { key = "greed", tex = "Interface\\Buttons\\UI-GroupLoot-Coin", tip = "Gier" },
-    { key = "need", tex = "Interface\\Buttons\\UI-GroupLoot-Dice", tip = "Bedarf" },
+    { key = "pass", tex = "Interface\\Buttons\\UI-GroupLoot-Pass", tip = L["Passen"] },
+    { key = "de", tex = "Interface\\Buttons\\UI-GroupLoot-DE", tip = L["Entzaubern"] },
+    { key = "greed", tex = "Interface\\Buttons\\UI-GroupLoot-Coin", tip = L["Gier"] },
+    { key = "need", tex = "Interface\\Buttons\\UI-GroupLoot-Dice", tip = L["Bedarf"] },
 }
 local db
 local frame
@@ -70,7 +134,7 @@ local function InSuite() return ns.Skin ~= nil end
 local function TopInset() return InSuite() and 0 or HEAD end
 
 local function SetTitle(n)
-    local t = n > 0 and ("Würfeln · " .. n) or "Würfeln"
+    local t = n > 0 and (L["Würfeln"] .. " · " .. n) or L["Würfeln"]
     if InSuite() then
         if not (ns.SetWindowTitle and ns.SetWindowTitle(frame, t)) and frame.title then frame.title:SetText(t) end
     elseif frame.title then
@@ -113,11 +177,11 @@ local function PlayersTooltip(r)
     GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
     GameTooltip:SetText(r.name:GetText() or "", 1, 1, 1)
     local names = Sorted(r)
-    if #names == 0 then GameTooltip:AddLine("Noch keine Wahl der anderen.", 0.6, 0.6, 0.6) end
-    GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.5, 0.5, 0.5)
+    if #names == 0 then GameTooltip:AddLine(L["Noch keine Wahl der anderen."], 0.6, 0.6, 0.6) end
+    GameTooltip:AddLine(L["Rechtsklick: Einstellungen"], 0.5, 0.5, 0.5)
     for _, n in ipairs(names) do
         local p = r.players[n]
-        GameTooltip:AddDoubleLine(n:gsub("%-.*$", "") .. (n == r.winner and "  |cff4cd964(gewonnen)|r" or ""),
+        GameTooltip:AddDoubleLine(n:gsub("%-.*$", "") .. (n == r.winner and "  |cff4cd964(" .. L["gewonnen"] .. ")|r" or ""),
             (CHOICE_TEXT[p.choice] or "?") .. (p.roll and ("  " .. p.roll) or ""), 1, 1, 1, 1, 1, 1)
     end
     GameTooltip:Show()
@@ -135,7 +199,7 @@ local Remove, Layout
 -- gewählte Zeile anzeigen (auch nach /reload wiederhergestellt)
 local function ShowChoice(r, kind, auto)
     r.choice, r.autoChoice = kind, auto
-    r.choiceText:SetText("» " .. CHOICE_TEXT[kind] .. (auto and " |cff999999(Filter)|r" or ""))
+    r.choiceText:SetText("» " .. CHOICE_TEXT[kind] .. (auto and " |cff999999(" .. L["Filter"] .. ")|r" or ""))
     for _, b in pairs(r.buttons) do b:Hide() end
     r.choiceText:Show()
     r:SetAlpha(0.55)
@@ -258,23 +322,23 @@ local REASON = { -- LOOT_ROLL_INELIGIBLE_REASONx (Blizzard-Texte, falls vorhande
     [1] = "LOOT_ROLL_INELIGIBLE_REASON1", [2] = "LOOT_ROLL_INELIGIBLE_REASON2", [3] = "LOOT_ROLL_INELIGIBLE_REASON3",
     [4] = "LOOT_ROLL_INELIGIBLE_REASON4", [5] = "LOOT_ROLL_INELIGIBLE_REASON5",
 }
-local function Reason(code) local k = REASON[code or 0]; return k and _G[k] or "Nicht möglich" end
+local function Reason(code) local k = REASON[code or 0]; return k and _G[k] or L["Nicht möglich"] end
 
 -- Zeile für einen Wurf füllen; info = { texture, name, count, quality, bop, canNeed, canGreed, canDE, rN, rG, rD, link, total }
 -- Infozeile: Wahl und Würfe der anderen, am Ende der Gewinner
 -- kurzer Name: ohne Server, nur der Vorname („Thorn Eisenfaust-Forever“ » „Thorn“)
 local function ShortName(n) n = (n or "?"):gsub("%-.*$", ""); return n:match("^(%S+)") or n end
-local GROUPS = { { 1, "|cff4cd964Bedarf|r" }, { 2, "|cffffd100Gier|r" }, { 3, "|cffb48cffEntz.|r" } }
+local GROUPS = { { 1, "|cff4cd964" .. L["Bedarf"] .. "|r" }, { 2, "|cffffd100" .. L["Gier"] .. "|r" }, { 3, "|cffb48cff" .. L["Entz."] .. "|r" } }
 -- Infozeile: „Bedarf: Thorn 87 · Gier: Grimbold 45, Mira · Passen: Lirael“, am Ende der Gewinner
 local function UpdateInfo(r)
     local parts = {}
     if r.winner then
         local p = r.players[r.winner]
-        parts[1] = ("|cff4cd964» %s gewinnt%s|r"):format(ShortName(r.winner), p and p.roll and (" (" .. p.roll .. ")") or "")
+        parts[1] = ("|cff4cd964" .. L["» %s gewinnt%s"] .. "|r"):format(ShortName(r.winner), p and p.roll and (" (" .. p.roll .. ")") or "")
     elseif r.allPassed then
-        parts[1] = "|cff999999Alle haben gepasst|r"
+        parts[1] = "|cff999999" .. L["Alle haben gepasst"] .. "|r"
     elseif r.bop then
-        parts[1] = "|cffff6060gebunden|r"
+        parts[1] = "|cffff6060" .. L["gebunden"] .. "|r"
     end
     if not r.winner and not r.allPassed and not db.list then
         local by = {}
@@ -293,7 +357,7 @@ local function UpdateInfo(r)
         for _, g in ipairs(GROUPS) do
             if by[g[1]] then parts[#parts + 1] = g[2] .. ": " .. list(by[g[1]]) end
         end
-        if by[0] then parts[#parts + 1] = "|cff999999Passen: " .. list(by[0]) .. "|r" end
+        if by[0] then parts[#parts + 1] = "|cff999999" .. L["Passen"] .. ": " .. list(by[0]) .. "|r" end
     end
     r.info:SetText(table.concat(parts, "  ·  "))
 end
@@ -351,7 +415,7 @@ local function UpdateList(r)
         if #names > max then
             local l = SubLine(r, max + 1)
             l.name:ClearAllPoints(); l.name:SetPoint("TOPLEFT", r, "TOPLEFT", ROW + 3, -(ROW + 1 + max * LINE)); l.name:SetWidth(wide)
-            l.name:SetText(("|cff999999+%d weitere (Maus über die Zeile)|r"):format(#names - max))
+            l.name:SetText(("|cff999999" .. L["+%d weitere (Maus über die Zeile)"] .. "|r"):format(#names - max))
             l.name:Show(); l.choice:Hide(); l.roll:Hide()
             shown = max + 1
         end
@@ -466,7 +530,7 @@ local function Finish(r)
     if r.testWinner and not r.winner then r.winner = r.testWinner; UpdateInfo(r) end -- Beispiel-Ergebnis
     r.removeAt = GetTime() + (db.linger or 6)
     for _, b in pairs(r.buttons) do b:Hide() end
-    if not r.choice then r.choiceText:SetText(r.winner and "" or "|cff999999vorbei|r"); r.choiceText:Show() end
+    if not r.choice then r.choiceText:SetText(r.winner and "" or ("|cff999999" .. L["vorbei"] .. "|r")); r.choiceText:Show() end
     r:SetAlpha(0.75)
     Layout()
 end
@@ -798,7 +862,7 @@ local function Test()
     for _, t in ipairs(TEST) do
         testID = testID - 1
         local name = GetItemInfo and GetItemInfo(t[1])
-        Add(testID, { texture = (GetItemIconByID and GetItemIconByID(t[1])) or 134400, name = name or ("Test-Item " .. -testID),
+        Add(testID, { texture = (GetItemIconByID and GetItemIconByID(t[1])) or 134400, name = name or (L["Test-Item "] .. -testID),
             count = t[2] == 4 and 4 or 1, quality = t[2], bop = t[4], canNeed = not t[5], canGreed = true, canDE = t[2] >= 2,
             rN = 2, link = "item:" .. t[1], total = 30 })
         local r = rows[testID]
@@ -810,23 +874,27 @@ local function Test()
         FeedAdd("Grimbold", "|cffffffff|Hitem:2589::::::::22:::::|h[Linen Cloth]|h|r", 3, true)
         FeedAdd("Mira", "|cff1eff00|Hitem:15310::::::::22:::::|h[Feral Gloves]|h|r", nil, true)
     end
-    msg("Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich).")
+    msg(L["Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich)."])
 end
 
 local function Command(arg)
     arg = (arg or ""):lower():match("^%s*(.-)%s*$")
     if arg == "test" or arg == "" then return Test() end
-    if arg == "reset" then db.point = nil; db.scale = 1; Place(); return msg("Position zurückgesetzt.") end
+    if arg == "reset" then db.point = nil; db.scale = 1; Place(); return msg(L["Position zurückgesetzt."]) end
     if arg == "menü" or arg == "menu" or arg == "optionen" then return ns.LootMenu() end
     if arg == "diagnose" or arg == "maus" then return ToggleDiag() end
-    if arg == "oben" or arg == "unten" then db.grow = arg == "oben" and "UP" or "DOWN"; SavePoint(); Place(); Layout(); return msg("Wächst nach " .. arg .. ".") end
+    if arg == "oben" or arg == "unten" or arg == "up" or arg == "down" then
+        local up = arg == "oben" or arg == "up"
+        db.grow = up and "UP" or "DOWN"; SavePoint(); Place(); Layout()
+        return msg(up and L["Wächst nach oben."] or L["Wächst nach unten."])
+    end
     if arg == "blizzard" then
         db.hideBlizzard = not db.hideBlizzard; ApplyBlizzard()
-        return msg("Blizzards Würfelfenster " .. (db.hideBlizzard and "aus (nur Auxy Loot)." or "wieder an."))
+        return msg(db.hideBlizzard and L["Blizzards Würfelfenster aus (nur Auxy Loot)."] or L["Blizzards Würfelfenster wieder an."])
     end
-    local n = tonumber(arg:match("^gross%s+([%d%.]+)") or arg:match("^groß%s+([%d%.]+)") or "")
-    if n and n >= 0.6 and n <= 2 then db.scale = n; Place(); return msg("Größe " .. n) end
-    msg("/auxyloot – test · menü (Einstellungen, Lootfilter) · oben/unten (Wachstum) · reset · blizzard · groß 1.2 (Größe 0.6–2). Titelzeile ziehen = verschieben, Rechtsklick = Einstellungen.")
+    local n = tonumber(arg:match("^gross%s+([%d%.]+)") or arg:match("^groß%s+([%d%.]+)") or arg:match("^size%s+([%d%.]+)") or "")
+    if n and n >= 0.6 and n <= 2 then db.scale = n; Place(); return msg(L["Größe "] .. n) end
+    msg(L["/auxyloot – test · menü (Einstellungen, Lootfilter) · oben/unten (Wachstum) · reset · blizzard · groß 1.2 (Größe 0.6–2). Titelzeile ziehen = verschieben, Rechtsklick = Einstellungen."])
 end
 ns.LootCommand = Command
 SLASH_AUXYLOOT1 = "/auxyloot"
@@ -834,63 +902,63 @@ SlashCmdList.AUXYLOOT = Command
 
 -- Menü (Komfort-Untermenü, Optionen-Seite, Einstellungsfenster im Bearbeitungsmodus, Rechtsklick)
 local function FillMenu(root)
-    root:CreateCheckbox("Blizzards Würfelfenster ausblenden", function() return db.hideBlizzard end,
+    root:CreateCheckbox(L["Blizzards Würfelfenster ausblenden"], function() return db.hideBlizzard end,
         function() db.hideBlizzard = not db.hideBlizzard; ApplyBlizzard() end)
-    root:CreateCheckbox("Zeile nach der Wahl ausblenden", function() return db.hideChosen end,
+    root:CreateCheckbox(L["Zeile nach der Wahl ausblenden"], function() return db.hideChosen end,
         function() db.hideChosen = not db.hideChosen end)
-    root:CreateCheckbox("Würfe der anderen untereinander", function() return db.list end, function()
+    root:CreateCheckbox(L["Würfe der anderen untereinander"], function() return db.list end, function()
         db.list = not db.list
         for _, r in pairs(rows) do UpdateInfo(r); UpdateList(r) end
         Layout()
     end)
-    local lm = root:CreateButton("Höchstens Mitspieler-Zeilen")
+    local lm = root:CreateButton(L["Höchstens Mitspieler-Zeilen"])
     for _, v in ipairs({ 3, 5, 10, 40 }) do
         lm:CreateRadio(tostring(v), function() return db.listMax == v end, function()
             db.listMax = v; for _, r in pairs(rows) do UpdateList(r) end; Layout()
         end)
     end
-    local g = root:CreateButton("Wächst nach")
-    for _, d in ipairs({ { "DOWN", "unten" }, { "UP", "oben" } }) do
+    local g = root:CreateButton(L["Wächst nach"])
+    for _, d in ipairs({ { "DOWN", L["unten"] }, { "UP", L["oben"] } }) do
         g:CreateRadio(d[2], function() return db.grow == d[1] end, function()
             if db.grow == d[1] then return end
             db.grow = d[1]; SavePoint(); Place(); Layout()
         end)
     end
-    local l = root:CreateButton("Ergebnis anzeigen")
+    local l = root:CreateButton(L["Ergebnis anzeigen"])
     for _, v in ipairs({ 0, 3, 6, 10, 20 }) do
-        l:CreateRadio(v == 0 and "nicht" or (v .. " s"), function() return db.linger == v end, function() db.linger = v end)
+        l:CreateRadio(v == 0 and L["nicht"] or (v .. " s"), function() return db.linger == v end, function() db.linger = v end)
     end
-    local w = root:CreateButton("Breite")
+    local w = root:CreateButton(L["Breite"])
     for _, v in ipairs({ 240, 300, 360, 420 }) do
         w:CreateRadio(v .. " px", function() return db.width == v end, function() db.width = v; Layout() end)
     end
-    local f = root:CreateButton("Lootfilter (nicht bei gebundenen Items)")
+    local f = root:CreateButton(L["Lootfilter (nicht bei gebundenen Items)"])
     for _, q in ipairs(FILTER_Q) do
         local sub = f:CreateButton(q[2])
         for _, act in ipairs(FILTER_DO) do
             sub:CreateRadio(act[2], function() return db.auto[q[1]] == act[1] end, function() db.auto[q[1]] = act[1] end)
         end
     end
-    root:CreateCheckbox("Beutefenster schließen, wenn nur noch gewürfelt wird", function() return db.autoClose end,
+    root:CreateCheckbox(L["Beutefenster schließen, wenn nur noch gewürfelt wird"], function() return db.autoClose end,
         function() db.autoClose = not db.autoClose end)
-    local fd = root:CreateButton("Beute der Gruppe")
-    fd:CreateCheckbox("Anzeigen (wer hat was eingesammelt)", function() return db.feed end, function() db.feed = not db.feed
+    local fd = root:CreateButton(L["Beute der Gruppe"])
+    fd:CreateCheckbox(L["Anzeigen (wer hat was eingesammelt)"], function() return db.feed end, function() db.feed = not db.feed
         if not db.feed then feedLines = {}; if feed then FeedLayout() end end end)
-    fd:CreateCheckbox("Nur Items, um die gewürfelt wurde", function() return db.feedRollsOnly end,
+    fd:CreateCheckbox(L["Nur Items, um die gewürfelt wurde"], function() return db.feedRollsOnly end,
         function() db.feedRollsOnly = not db.feedRollsOnly end)
-    fd:CreateCheckbox("Eigene Beute auch zeigen", function() return db.feedSelf end, function() db.feedSelf = not db.feedSelf end)
-    local fq = fd:CreateButton("Ab Qualität")
-    for _, q in ipairs({ { 0, "alles (auch grau)" }, { 1, "weiß" }, { 2, "grün" }, { 3, "blau" } }) do
+    fd:CreateCheckbox(L["Eigene Beute auch zeigen"], function() return db.feedSelf end, function() db.feedSelf = not db.feedSelf end)
+    local fq = fd:CreateButton(L["Ab Qualität"])
+    for _, q in ipairs({ { 0, L["alles (auch grau)"] }, { 1, L["weiß"] }, { 2, L["grün"] }, { 3, L["blau"] } }) do
         fq:CreateRadio(q[2], function() return db.feedQuality == q[1] end, function() db.feedQuality = q[1] end)
     end
-    local ft = fd:CreateButton("Stehen lassen")
+    local ft = fd:CreateButton(L["Stehen lassen"])
     for _, v in ipairs({ 6, 12, 20, 40 }) do
         ft:CreateRadio(v .. " s", function() return db.feedTime == v end, function() db.feedTime = v end)
     end
-    root:CreateButton("Test (3 Beispiel-Würfe)", Test)
-    root:CreateButton("Position zurücksetzen", function() db.point = nil; Place() end)
+    root:CreateButton(L["Test (3 Beispiel-Würfe)"], Test)
+    root:CreateButton(L["Position zurücksetzen"], function() db.point = nil; Place() end)
 end
-local function AddMenu(root) FillMenu(root:CreateButton("Auxy Loot (Würfelfenster)")) end
+local function AddMenu(root) FillMenu(root:CreateButton(L["Auxy Loot (Würfelfenster)"])) end
 ns.LootMenu = function(owner)
     local open = ns.ContextMenu or (MenuUtil and MenuUtil.CreateContextMenu)
     if open then open(owner or UIParent, function(_, root) root:CreateTitle("Auxy Loot"); FillMenu(root) end) end
@@ -917,13 +985,13 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
         frame:SetFrameStrata("MEDIUM")
         frame:Hide()
         if InSuite() then
-            ns.Skin(frame, 0, { title = "Würfeln", close = false })
+            ns.Skin(frame, 0, { title = L["Würfeln"], close = false })
             if ns.MakeEditable then
                 ns.MakeEditable(frame, { label = "Auxy Loot", minW = 220, maxW = 460, minH = 20, maxH = 400,
                     menu = function(o) ns.LootMenu(o) end,
                     scale = { get = function() return db.scale or 1 end, set = function(v) db.scale = v; Place() end },
                     options = function(p)
-                        p:Slider("Breite", 220, 460, 10, function() return db.width end, function(v) db.width = v; Layout() end, "%d px")
+                        p:Slider(L["Breite"], 220, 460, 10, function() return db.width end, function(v) db.width = v; Layout() end, "%d px")
                     end,
                     top = ns.HasTitleBar and ns.HasTitleBar() and 19 or 0,
                     onMove = function() SavePoint() end,

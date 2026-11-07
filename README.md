@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/Auxilias/auxy-loot/releases/latest"><img src="https://img.shields.io/github/v/release/Auxilias/auxy-loot?label=Version&color=ffd100" alt="Version"></a>
   <img src="https://img.shields.io/badge/WoW%20Forever-1.60.1-1eff00" alt="WoW Forever 1.60.1">
-  <img src="https://img.shields.io/badge/Sprache-Deutsch-lightgrey" alt="Sprache: Deutsch">
+  <img src="https://img.shields.io/badge/Sprache-Deutsch%20%2F%20English-lightgrey" alt="Sprache: Deutsch / English">
   <a href="https://github.com/Auxilias/auxy-loot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Auxilias/auxy-loot?color=blue" alt="Lizenz"></a>
 </p>
 
@@ -57,7 +57,8 @@ Verschieben über die goldene Titelzeile. Rechtsklick auf die Titelzeile oder ei
 
 ## Gut zu wissen
 
-- Die Oberfläche ist auf Deutsch. Der Client darf jede Sprache haben, die Würfe der anderen liest Auxy Loot aus Blizzards Loot-Meldungen.
+- Die Oberfläche ist **Deutsch bei deutschem Client, sonst Englisch**. Die Würfe der anderen liest Auxy Loot aus Blizzards Loot-Meldungen, das klappt in jeder Sprache.
+- Die Befehle gibt es deutsch und englisch (`/auxyloot oben` = `up`, `groß 1.2` = `size 1.2`).
 - Auxy Loot würfelt nur dann selbst, wenn du den Lootfilter dafür einstellst.
 - Fehler oder Ideen gerne als [Issue](https://github.com/Auxilias/auxy-loot/issues). Bei Lua-Fehlern hilft der Text aus BugSack.
 
@@ -77,4 +78,4 @@ MIT, siehe [LICENSE](https://github.com/Auxilias/auxy-loot/blob/main/LICENSE).
 
 ### English
 
-A compact group-loot roll window for WoW: Forever. It opens on its own when a roll starts and has Need, Greed, Disenchant and Pass buttons. It also shows what everyone else picked and rolled, and who won. Optional loot filter per quality (never for bind-on-pickup items). Survives `/reload`. Type `/auxyloot test` for a demo. The UI is German only, but it works with any client language. Written largely with AI assistance (Claude), tested in game. MIT license.
+A compact group-loot roll window for WoW: Forever. It opens on its own when a roll starts and has Need, Greed, Disenchant and Pass buttons. It also shows what everyone else picked and rolled, and who won. Optional loot filter per quality (never for bind-on-pickup items). Survives `/reload`. Type `/auxyloot test` for a demo. The UI is German on German clients and English on all others; commands work in both languages (`up`/`down`, `size 1.2`). Written largely with AI assistance (Claude), tested in game. MIT license.
