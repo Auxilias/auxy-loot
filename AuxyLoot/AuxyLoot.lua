@@ -17,7 +17,8 @@ end
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
-local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5 }
+local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5,
+    autoClose = true, feed = true, feedSelf = false, feedTime = 12, feedMax = 5, feedQuality = 1 }
 local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
 local ROW, GAP, HEAD = 38, 3, 20 -- Zeile: oben Item + Knöpfe, darunter die Würfe der anderen
 -- Lootfilter: je Qualität automatisch würfeln ("greed" | "pass"); gebundene Items (BoP) immer fragen
@@ -521,10 +522,114 @@ local function OnLootChat(text)
     end
 end
 
+-- ---------------------------------------------------------------- Beute der Gruppe
+-- Kleine Liste unter dem Würfelfenster: wer was eingesammelt hat („Thorn: [Leinenstoff] ×2“), blendet nach
+-- db.feedTime Sekunden aus. Quelle: Blizzards Meldungen LOOT_ITEM… im Loot-Chat.
+local feed, feedLines, feedPatterns = nil, {}, nil
+local function BuildFeedPatterns()
+    feedPatterns = {}
+    local function add(key, self) local f = _G[key]; if type(f) == "string" then feedPatterns[#feedPatterns + 1] = { ToPattern(f), self } end end
+    add("LOOT_ITEM_SELF_MULTIPLE", true); add("LOOT_ITEM_SELF", true); add("LOOT_ITEM_PUSHED_SELF_MULTIPLE", true)
+    add("LOOT_ITEM_PUSHED_SELF", true); add("LOOT_ITEM_MULTIPLE"); add("LOOT_ITEM")
+end
+local function FeedLayout()
+    local now = GetTime()
+    for i = #feedLines, 1, -1 do if feedLines[i].till < now then table.remove(feedLines, i) end end
+    while #feedLines > (db.feedMax or 5) do table.remove(feedLines, 1) end
+    feed:ClearAllPoints()
+    feed:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, -6)
+    feed:SetWidth(db.width)
+    for i = 1, math.max(#feedLines, #(feed.rows or {})) do
+        local l = feedLines[i]
+        local fr = feed.rows[i]
+        if l and not fr then
+            fr = { icon = feed:CreateTexture(nil, "ARTWORK"), text = feed:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall") }
+            fr.icon:SetSize(14, 14); fr.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            fr.text:SetJustifyH("LEFT"); fr.text:SetWordWrap(false)
+            fr.text:SetShadowColor(0, 0, 0, 1); fr.text:SetShadowOffset(1, -1)
+            feed.rows[i] = fr
+        end
+        if fr then
+            if l then
+                fr.icon:ClearAllPoints(); fr.icon:SetPoint("TOPLEFT", feed, "TOPLEFT", 2, -(i - 1) * 16)
+                fr.text:ClearAllPoints(); fr.text:SetPoint("LEFT", fr.icon, "RIGHT", 4, 0); fr.text:SetWidth(db.width - 24)
+                fr.icon:SetTexture(l.icon); fr.text:SetText(l.text)
+                local left = l.till - now -- in den letzten 2 s ausblenden
+                local a = left < 2 and math.max(0, left / 2) or 1
+                fr.icon:SetAlpha(a); fr.text:SetAlpha(a)
+                fr.icon:Show(); fr.text:Show()
+            else
+                fr.icon:Hide(); fr.text:Hide()
+            end
+        end
+    end
+    feed:SetHeight(math.max(1, #feedLines * 16))
+    feed:SetShown(#feedLines > 0)
+end
+local function FeedAdd(name, link, count)
+    local itemID = tonumber(link:match("item:(%d+)"))
+    local q = itemID and C_Item and C_Item.GetItemQualityByID and C_Item.GetItemQualityByID(itemID)
+    q = q or tonumber(link:match("|cnIQ(%d)")) -- Forever-Links: Qualität steht im Farbcode
+    if q and not secret(q) and q < (db.feedQuality or 0) then return end
+    local icon = itemID and GetItemIconByID and GetItemIconByID(itemID) or 134400
+    feedLines[#feedLines + 1] = { icon = icon, till = GetTime() + (db.feedTime or 12),
+        text = "|cffdddddd" .. ShortName(name) .. ":|r " .. link .. ((count or 1) > 1 and (" |cffbbbbbb×" .. count .. "|r") or "") }
+    FeedLayout()
+end
+local function OnFeedChat(text)
+    if not (db.feed and feed) or type(text) ~= "string" or secret(text) then return end
+    if not feedPatterns then BuildFeedPatterns() end
+    text = StripHistory(text)
+    for _, pt in ipairs(feedPatterns) do
+        local caps = { text:match(pt[1]) }
+        if #caps > 0 then
+            if pt[2] and not db.feedSelf then return end
+            local link, count, name
+            for _, c in ipairs(caps) do
+                if c:find("|H", 1, true) then link = c elseif tonumber(c) then count = tonumber(c) else name = c end
+            end
+            if pt[2] then name = UnitName("player") end
+            if link and link:find("item:", 1, true) then FeedAdd(name, link, count) end
+            return
+        end
+    end
+end
+
+-- ---------------------------------------------------------------- Beutefenster schließen, wenn nur noch Würfel-Items drin sind
+-- Beim Gruppen-Loot bleibt das Beutefenster offen, solange gewürfelt wird – dann reagiert WoW kaum auf
+-- Rechtsklicks in die Welt (Log 07.11.). Würfeln und Chat-Meldungen laufen nach dem Schließen weiter.
+local closeGen = 0
+local function CheckLootWindow()
+    if not db.autoClose or not (GetNumLootItems and GetLootSlotInfo and CloseLoot) then return end
+    local n = GetNumLootItems() or 0
+    if n == 0 then return end
+    for slot = 1, n do
+        local hasItem = not LootSlotHasItem or LootSlotHasItem(slot)
+        if hasItem then
+            local locked = select(6, GetLootSlotInfo(slot))
+            if secret(locked) or not locked then return end -- noch etwas zum Einsammeln da
+        end
+    end
+    CloseLoot()
+end
+local function SoonCheckLoot()
+    closeGen = closeGen + 1
+    local mine = closeGen
+    -- kurz warten: schnelles/automatisches Plündern nimmt erst alles Freie
+    C_Timer.After(0.4, function() if mine == closeGen then CheckLootWindow() end end)
+end
+
 -- ---------------------------------------------------------------- Blizzard-Würfelfenster
 -- Forever öffnet seine Würfelfenster nicht (nur) über UIParent → zusätzlich GroupLootFrame1–4 beim Zeigen ausblenden
 local hookedBlizz = false
-local function HideBlizzFrame(f) if db.hideBlizzard and frame then f:Hide() end end
+local function HideBlizzFrame(f)
+    if not (db.hideBlizzard and frame) then return end
+    f:Hide()
+    -- leeren Blizzard-Container mit ausblenden (blieb sonst unsichtbar mit Maus aktiv stehen)
+    local any = false
+    for i = 1, (NUM_GROUP_LOOT_FRAMES or 4) do local g = _G["GroupLootFrame" .. i]; if g and g:IsShown() then any = true end end
+    if not any and GroupLootContainer and GroupLootContainer:IsShown() then GroupLootContainer:Hide() end
+end
 local function ApplyBlizzard()
     if not UIParent then return end
     if db.hideBlizzard then
@@ -595,6 +700,10 @@ local function Test()
         if t[2] == 2 then Note(r, "Grimbold", 2, 45); Note(r, "Lirael", 0); r.testWinner = "Grimbold" end
         if t[2] == 3 then Note(r, "Thorn", 1, 87); Note(r, "Mira", 2) end
     end
+    if feed and db.feed then
+        FeedAdd("Grimbold", "|cffffffff|Hitem:2589::::::::22:::::|h[Linen Cloth]|h|r", 3)
+        FeedAdd("Mira", "|cff1eff00|Hitem:15310::::::::22:::::|h[Feral Gloves]|h|r")
+    end
     msg("Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich).")
 end
 
@@ -656,6 +765,20 @@ local function FillMenu(root)
             sub:CreateRadio(act[2], function() return db.auto[q[1]] == act[1] end, function() db.auto[q[1]] = act[1] end)
         end
     end
+    root:CreateCheckbox("Beutefenster schließen, wenn nur noch gewürfelt wird", function() return db.autoClose end,
+        function() db.autoClose = not db.autoClose end)
+    local fd = root:CreateButton("Beute der Gruppe")
+    fd:CreateCheckbox("Anzeigen (wer hat was eingesammelt)", function() return db.feed end, function() db.feed = not db.feed
+        if not db.feed then feedLines = {}; if feed then FeedLayout() end end end)
+    fd:CreateCheckbox("Eigene Beute auch zeigen", function() return db.feedSelf end, function() db.feedSelf = not db.feedSelf end)
+    local fq = fd:CreateButton("Ab Qualität")
+    for _, q in ipairs({ { 0, "alles (auch grau)" }, { 1, "weiß" }, { 2, "grün" }, { 3, "blau" } }) do
+        fq:CreateRadio(q[2], function() return db.feedQuality == q[1] end, function() db.feedQuality = q[1] end)
+    end
+    local ft = fd:CreateButton("Stehen lassen")
+    for _, v in ipairs({ 6, 12, 20, 40 }) do
+        ft:CreateRadio(v .. " s", function() return db.feedTime == v end, function() db.feedTime = v end)
+    end
     root:CreateButton("Test (3 Beispiel-Würfe)", Test)
     root:CreateButton("Position zurücksetzen", function() db.point = nil; Place() end)
 end
@@ -704,8 +827,15 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
         end
         frame:SetScript("OnUpdate", OnUpdate)
         frame.auxyMenu = function(owner) ns.LootMenu(owner) end -- Rechtsklick auf die Titelleiste (Suite)
+        feed = CreateFrame("Frame", "AuxyLootFeed", UIParent)
+        feed.rows = {}
+        feed:SetSize(db.width, 1)
+        feed:Hide()
+        local facc = 0
+        feed:SetScript("OnUpdate", function(_, el) facc = facc + el; if facc >= 0.25 then facc = 0; FeedLayout() end end)
         Place()
-        for _, e in ipairs({ "START_LOOT_ROLL", "CANCEL_LOOT_ROLL", "CANCEL_ALL_LOOT_ROLLS", "PLAYER_LOGIN", "CHAT_MSG_LOOT" }) do
+        for _, e in ipairs({ "START_LOOT_ROLL", "CANCEL_LOOT_ROLL", "CANCEL_ALL_LOOT_ROLLS", "PLAYER_LOGIN", "CHAT_MSG_LOOT",
+            "LOOT_OPENED", "LOOT_SLOT_CLEARED" }) do
             pcall(self.RegisterEvent, self, e)
         end
         self:UnregisterEvent("ADDON_LOADED")
@@ -727,5 +857,8 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
         for _, id in ipairs(order) do if id > 0 and rows[id] then rows[id].ended = true end end
     elseif event == "CHAT_MSG_LOOT" then
         OnLootChat(a1)
+        OnFeedChat(a1)
+    elseif event == "LOOT_OPENED" or event == "LOOT_SLOT_CLEARED" then
+        SoonCheckLoot()
     end
 end)

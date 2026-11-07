@@ -6,6 +6,8 @@ Kleines, dezentes Würfelfenster für **WoW Forever** (Gruppen-Loot).
 - Knöpfe **Bedarf / Gier / Entzaubern / Passen**; was nicht geht, ist gedimmt (Grund im Tooltip)
 - Zeigt unter jedem Item klein, was jeder Mitspieler gewählt und gewürfelt hat (Bedarf oben, höchster Wurf zuerst), am Ende den **Gewinner**; Maus über die Zeile = komplette Liste
 - Blizzards eigenes Würfelfenster wird ausgeblendet (abschaltbar)
+- **Beute der Gruppe:** kleine Liste, wer was eingesammelt hat (ab Qualität, eigene Beute optional), blendet nach ein paar Sekunden aus
+- Schließt das Beutefenster der Leiche, sobald nur noch gewürfelt wird – sonst blockiert WoW Rechtsklicks in die Welt (abschaltbar; das Würfeln läuft weiter)
 - **Lootfilter:** je Qualität fragen, automatisch Gier oder automatisch passen – gebundene Items (BoP) fragt es immer
 - Wächst nach unten oder oben, Breite und Größe einstellbar, Zeile nach der Wahl optional ausblenden
 
