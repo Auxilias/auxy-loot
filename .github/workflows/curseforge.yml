@@ -1,0 +1,50 @@
+# Lädt bei jedem GitHub-Release das Addon-Zip zu CurseForge hoch (Projekt 1790217).
+# Secret: CF_API_KEY (Token von wow.curseforge.com/account/api-tokens).
+# Manuell starten mit "list" zeigt die verfügbaren Spielversionen (zum Prüfen von CF_GAME_VERSION).
+name: CurseForge
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "list = Spielversionen auflisten, upload = Release-Zip des neuesten Releases hochladen"
+        default: list
+env:
+  CF_PROJECT: "1790217"
+  # Name der Spielversion bei CurseForge (siehe Lauf "list"); leer = aus der Interface-Nummer der TOC raten
+  CF_GAME_VERSION: ""
+permissions:
+  contents: read
+jobs:
+  curseforge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Spielversionen auflisten
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'list'
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        run: |
+          curl -fsS -H "X-Api-Token: $CF_API_KEY" https://wow.curseforge.com/api/game/versions \
+            | jq -r '.[] | "\(.id)\t\(.gameVersionTypeID)\t\(.name)"' | sort -k3 -V | tail -60
+          grep '^## Interface' AuxyLoot/AuxyLoot.toc
+      - name: Zip bauen und hochladen
+        if: github.event_name == 'release' || inputs.mode == 'upload'
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          TAG: ${{ github.event.release.tag_name || '' }}
+          BODY: ${{ github.event.release.body || 'Neue Version.' }}
+        run: |
+          set -euo pipefail
+          VER=$(sed -n 's/^## Version: *//p' AuxyLoot/AuxyLoot.toc | tr -d '\r')
+          [ -n "$CF_GAME_VERSION" ] || { echo "CF_GAME_VERSION ist leer – erst Lauf 'list' prüfen und eintragen."; exit 1; }
+          GV=$(curl -fsS -H "X-Api-Token: $CF_API_KEY" https://wow.curseforge.com/api/game/versions \
+            | jq -r --arg n "$CF_GAME_VERSION" '[.[] | select(.name == $n)][0].id // empty')
+          [ -n "$GV" ] || { echo "Spielversion '$CF_GAME_VERSION' nicht gefunden."; exit 1; }
+          zip -qr AuxyLoot.zip AuxyLoot -x '*.bak'
+          jq -n --arg body "$BODY" --arg name "Auxy Loot $VER" --argjson gv "$GV" \
+            '{changelog:$body, changelogType:"markdown", displayName:$name, releaseType:"release", gameVersions:[$gv]}' > meta.json
+          curl -fsS -H "X-Api-Token: $CF_API_KEY" \
+            -F "metadata=<meta.json" -F "file=@AuxyLoot.zip" \
+            "https://wow.curseforge.com/api/projects/$CF_PROJECT/upload-file"
