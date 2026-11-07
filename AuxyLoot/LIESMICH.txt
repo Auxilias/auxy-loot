@@ -1,0 +1,31 @@
+Auxy Loot 1.2 – kleines Würfelfenster für WoW Forever
+
+Installieren:
+  Den Ordner "AuxyLoot" (aus der zip) nach
+  World of Warcraft\_forever_\Interface\AddOns\
+  kopieren, dann WoW neu starten.
+
+Was es macht:
+  Sobald ein Item zum Würfeln auftaucht, öffnet sich ein kleines Fenster:
+  Symbol, Name, Restzeit, Knöpfe Bedarf / Gier / Entzaubern / Passen.
+  Nach dem Klick bleibt die Zeile stehen und zeigt, was die anderen wählen
+  (B = Bedarf, G = Gier, E = Entzaubern, P = Passen) und würfeln, am Ende den
+  Gewinner. Maus über die Zeile zeigt alle Würfe als Liste.
+  Blizzards eigenes Würfelfenster wird dabei ausgeblendet.
+
+Einstellungen (Rechtsklick auf die Titelzeile oder /auxyloot menü):
+  - Wächst nach unten oder oben
+  - Breite
+  - Zeile nach der Wahl ausblenden
+  - Ergebnis anzeigen: wie lange der Gewinner stehen bleibt
+  - Lootfilter: je Qualität (weiß/grün/blau/lila) fragen, automatisch Gier
+    oder automatisch passen. Gebundene Items (BoP) fragt es immer.
+
+Befehle:
+  /auxyloot            Test mit drei Beispiel-Würfen
+  /auxyloot menü       Einstellungen
+  /auxyloot oben|unten Wachstumsrichtung
+  /auxyloot blizzard   Blizzards Würfelfenster wieder an/aus
+  /auxyloot reset      Position zurücksetzen
+  /auxyloot groß 1.2   Größe (0.6 bis 2)
+  Fenster an der goldenen Titelzeile verschieben.
