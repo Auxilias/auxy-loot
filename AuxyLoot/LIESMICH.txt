@@ -1,4 +1,4 @@
-Auxy Loot 1.2 – kleines Würfelfenster für WoW Forever
+Auxy Loot – Würfelfenster für Gruppen-Loot in WoW Forever
 
 Installieren:
   Den Ordner "AuxyLoot" (aus der zip) nach
