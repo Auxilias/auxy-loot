@@ -18,12 +18,11 @@ end
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
 local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6 }
-local ROW, GAP, HEAD = 26, 3, 20
+local ROW, GAP, HEAD = 38, 3, 20 -- Zeile: oben Item + Knöpfe, darunter die Würfe der anderen
 -- Lootfilter: je Qualität automatisch würfeln ("greed" | "pass"); gebundene Items (BoP) immer fragen
 local FILTER_Q = { { 1, "Gewöhnlich (weiß)" }, { 2, "Ungewöhnlich (grün)" }, { 3, "Selten (blau)" }, { 4, "Episch (lila)" } }
 local FILTER_DO = { { nil, "Fragen" }, { "greed", "Automatisch Gier" }, { "pass", "Automatisch passen" } }
 local ROLL = { need = 1, greed = 2, de = 3, pass = 0 }
-local LETTER = { [1] = "|cff4cd964B|r", [2] = "|cffffd100G|r", [3] = "|cffb48cffE|r", [0] = "|cff999999P|r" }
 local SORT = { [1] = 1, [2] = 2, [3] = 3, [0] = 4 }
 local CHOICE_TEXT = { [1] = "|cff4cd964Bedarf|r", [2] = "|cffffd100Gier|r", [3] = "|cffb48cffEntzaubern|r", [0] = "|cff999999Passen|r" }
 local BUTTONS = { -- Reihenfolge rechts » links: Passen ganz rechts
@@ -119,7 +118,7 @@ local function PlayersTooltip(r)
     if #names == 0 then GameTooltip:AddLine("Noch keine Wahl der anderen.", 0.6, 0.6, 0.6) end
     for _, n in ipairs(names) do
         local p = r.players[n]
-        GameTooltip:AddDoubleLine(ShortName(n) .. (n == r.winner and "  |cff4cd964(gewonnen)|r" or ""),
+        GameTooltip:AddDoubleLine(n:gsub("%-.*$", "") .. (n == r.winner and "  |cff4cd964(gewonnen)|r" or ""),
             (CHOICE_TEXT[p.choice] or "?") .. (p.roll and ("  " .. p.roll) or ""), 1, 1, 1, 1, 1, 1)
     end
     GameTooltip:Show()
@@ -156,14 +155,14 @@ local function NewRow()
     r:SetSize(db.width, ROW)
     if r.SetBackdrop then
         r:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-        r:SetBackdropColor(0, 0, 0, 0.55)
+        r:SetBackdropColor(0, 0, 0, 0.78) -- dunkel genug zum Lesen über hellem Boden
     end
     r:EnableMouse(true)
     r:SetScript("OnEnter", PlayersTooltip)
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
     r.iconBtn = CreateFrame("Button", nil, r)
-    r.iconBtn:SetSize(ROW - 2, ROW - 2)
-    r.iconBtn:SetPoint("LEFT", 1, 0)
+    r.iconBtn:SetSize(ROW - 6, ROW - 6)
+    r.iconBtn:SetPoint("LEFT", 3, 0)
     r.icon = r.iconBtn:CreateTexture(nil, "ARTWORK")
     r.icon:SetAllPoints()
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -178,13 +177,17 @@ local function NewRow()
         elseif IsModifiedClick and IsModifiedClick("DRESSUP") and DressUpItemLink then DressUpItemLink(link) end
     end)
     r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    r.name:SetPoint("TOPLEFT", r.iconBtn, "TOPRIGHT", 5, -2)
+    r.name:SetPoint("TOPLEFT", r.iconBtn, "TOPRIGHT", 6, -2)
     r.name:SetJustifyH("LEFT")
     r.name:SetWordWrap(false)
     r.name:SetShadowColor(0, 0, 0, 1); r.name:SetShadowOffset(1, -1)
-    r.info = r:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    r.info:SetPoint("TOPLEFT", r.name, "BOTTOMLEFT", 0, -1)
+    -- zweite Zeile: bis zum rechten Rand, eine Zeile, zu lang = „…“ (alles im Tooltip)
+    r.info = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    r.info:SetPoint("BOTTOMLEFT", r.iconBtn, "BOTTOMRIGHT", 6, 3)
+    r.info:SetPoint("RIGHT", r, "RIGHT", -6, 0)
     r.info:SetJustifyH("LEFT")
+    r.info:SetWordWrap(false)
+    r.info:SetShadowColor(0, 0, 0, 1); r.info:SetShadowOffset(1, -1)
     -- Restzeit: feiner Balken am unteren Rand
     r.bar = CreateFrame("StatusBar", nil, r)
     r.bar:SetPoint("BOTTOMLEFT", r.iconBtn, "BOTTOMRIGHT", 2, -1)
@@ -197,7 +200,7 @@ local function NewRow()
     for _, def in ipairs(BUTTONS) do
         local b = CreateFrame("Button", nil, r)
         b:SetSize(20, 20)
-        b:SetPoint("RIGHT", x, 1)
+        b:SetPoint("TOPRIGHT", x, -2)
         b:SetNormalTexture(def.tex .. "-Up")
         b:SetPushedTexture(def.tex .. "-Down")
         b:SetHighlightTexture(def.tex .. "-Highlight")
@@ -208,9 +211,9 @@ local function NewRow()
         r.buttons[def.key] = b
         x = x - 22
     end
-    r.name:SetPoint("RIGHT", r, "RIGHT", x - 2, 0)
+    r.name:SetPoint("RIGHT", r, "TOPRIGHT", x - 2, -10)
     r.choiceText = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    r.choiceText:SetPoint("RIGHT", -6, 1)
+    r.choiceText:SetPoint("TOPRIGHT", -6, -5)
     return r
 end
 
@@ -230,30 +233,40 @@ local function Reason(code) local k = REASON[code or 0]; return k and _G[k] or "
 
 -- Zeile für einen Wurf füllen; info = { texture, name, count, quality, bop, canNeed, canGreed, canDE, rN, rG, rD, link, total }
 -- Infozeile: Wahl und Würfe der anderen, am Ende der Gewinner
-local function ShortName(n) return (n or "?"):gsub("%-.*$", "") end
+-- kurzer Name: ohne Server, nur der Vorname („Thorn Eisenfaust-Forever“ » „Thorn“)
+local function ShortName(n) n = (n or "?"):gsub("%-.*$", ""); return n:match("^(%S+)") or n end
+local GROUPS = { { 1, "|cff4cd964Bedarf|r" }, { 2, "|cffffd100Gier|r" }, { 3, "|cffb48cffEntz.|r" } }
+-- Infozeile: „Bedarf: Thorn 87 · Gier: Grimbold 45, Mira · Passen: Lirael“, am Ende der Gewinner
 local function UpdateInfo(r)
-    local t = {}
+    local parts = {}
     if r.winner then
-        t[1] = ("|cff4cd964» %s gewinnt%s|r"):format(ShortName(r.winner), r.players[r.winner] and r.players[r.winner].roll
-            and (" (" .. r.players[r.winner].roll .. ")") or "")
+        local p = r.players[r.winner]
+        parts[1] = ("|cff4cd964» %s gewinnt%s|r"):format(ShortName(r.winner), p and p.roll and (" (" .. p.roll .. ")") or "")
     elseif r.allPassed then
-        t[1] = "|cff999999Alle haben gepasst|r"
-    else
-        if r.bop then t[1] = "|cffff6060gebunden|r" end
-        local list = {}
-        for _, name in ipairs(r.porder) do list[#list + 1] = name end
-        table.sort(list, function(a, b)
-            local pa, pb = r.players[a], r.players[b]
-            local sa, sb = SORT[pa.choice] or 5, SORT[pb.choice] or 5
-            if sa ~= sb then return sa < sb end
-            return (pa.roll or 0) > (pb.roll or 0)
-        end)
-        for _, name in ipairs(list) do
-            local p = r.players[name]
-            t[#t + 1] = (LETTER[p.choice] or "") .. " " .. ShortName(name) .. (p.roll and (" " .. p.roll) or "")
-        end
+        parts[1] = "|cff999999Alle haben gepasst|r"
+    elseif r.bop then
+        parts[1] = "|cffff6060gebunden|r"
     end
-    r.info:SetText(table.concat(t, "  "))
+    if not r.winner and not r.allPassed then
+        local by = {}
+        for _, name in ipairs(r.porder) do
+            local p = r.players[name]
+            local c = p.choice == nil and -1 or p.choice
+            by[c] = by[c] or {}
+            table.insert(by[c], name)
+        end
+        local function list(names)
+            table.sort(names, function(a, b) return (r.players[a].roll or 0) > (r.players[b].roll or 0) end)
+            local t = {}
+            for _, n in ipairs(names) do t[#t + 1] = ShortName(n) .. (r.players[n].roll and (" " .. r.players[n].roll) or "") end
+            return table.concat(t, ", ")
+        end
+        for _, g in ipairs(GROUPS) do
+            if by[g[1]] then parts[#parts + 1] = g[2] .. ": " .. list(by[g[1]]) end
+        end
+        if by[0] then parts[#parts + 1] = "|cff999999Passen: " .. list(by[0]) .. "|r" end
+    end
+    r.info:SetText(table.concat(parts, "  ·  "))
 end
 local function Note(r, name, choice, roll)
     if not name then return end
