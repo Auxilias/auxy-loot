@@ -608,6 +608,9 @@ local function OnLootChat(text)
                 else name = c end
             end
             if pt.self then name = UnitName("player") end
+            -- derselbe Spieler kommt mal als „Auxy“, mal als „Auxy-Forever“ / „Auxy Nachname“ → auf den Vornamen vereinheitlichen
+            -- (sonst steht er doppelt in der Liste, 07.11.)
+            if name then name = ShortName(name) end
             local itemID = link and tonumber(link:match("item:(%d+)"))
             if not itemID then return end
             local r = RowFor(itemID, name, pt[2])
