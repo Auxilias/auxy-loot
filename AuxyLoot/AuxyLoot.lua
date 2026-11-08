@@ -84,7 +84,7 @@ end
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
-local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5, seed = true,
+local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 5, list = true, listMax = 5, seed = true,
     autoClose = true, feed = true, feedSelf = false, feedTime = 12, feedMax = 5, feedQuality = 1, feedRollsOnly = true }
 local rolledItems = {} -- itemID → Zeit des Wurfs (für „Beute der Gruppe: nur gewürfelte Items“)
 local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
@@ -650,6 +650,8 @@ local function OnLootChat(text)
             elseif pt[2] == "roll" then Note(r, name, pt[3], roll)
             elseif pt[2] == "won" then r.winner = name; Note(r, name)
             elseif pt[2] == "allpassed" then r.allPassed = true; UpdateInfo(r) end
+            -- Ergebnis kommt oft erst, nachdem die Zeile schon „vorbei“ war: Anzeigezeit ab jetzt neu (volle db.linger Sekunden)
+            if (pt[2] == "won" or pt[2] == "allpassed") and r.removeAt then r.removeAt = GetTime() + (db.linger or 5) end
             return
         end
     end
@@ -967,7 +969,7 @@ local function FillMenu(root)
         end)
     end
     local l = root:CreateButton(L["Ergebnis anzeigen"])
-    for _, v in ipairs({ 0, 3, 6, 10, 20 }) do
+    for _, v in ipairs({ 0, 3, 5, 8, 12, 20 }) do
         l:CreateRadio(v == 0 and L["nicht"] or (v .. " s"), function() return db.linger == v end, function() db.linger = v end)
     end
     local w = root:CreateButton(L["Breite"])
@@ -1020,6 +1022,7 @@ ev:SetScript("OnEvent", function(self, event, a1, a2)
         AuxyLootDB = AuxyLootDB or {}
         db = AuxyLootDB
         for k, v in pairs(DEFAULTS) do if db[k] == nil then db[k] = v end end
+        if not db.lingerV2 then db.lingerV2 = true; if db.linger == 6 then db.linger = 5 end end -- Standard war 6 s, jetzt 5 s (einmalig)
         db.auto = db.auto or {}
         frame = CreateFrame("Frame", "AuxyLootFrame", UIParent, "BackdropTemplate")
         frame:SetMovable(true)
