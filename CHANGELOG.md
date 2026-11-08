@@ -1,5 +1,8 @@
 # Änderungen
 
+## 1.2
+- New: all group members are listed as soon as a roll starts ("pending" until they choose), so the row keeps its final height and the buttons no longer jump while rolls come in; counter "3/5 chosen"; new option to switch it off. / Neu: Alle Gruppenmitglieder stehen sofort in der Liste ("ausstehend", bis sie gewählt haben); die Zeile hat von Anfang an ihre endgültige Höhe, die Knöpfe wandern nicht mehr; Zähler "3/5 gewählt"; per Option abschaltbar.
+
 ## 1.1
 - Fix: Spieler erscheinen nicht mehr doppelt in der Liste (Name mit/ohne Server). / Fix: players no longer appear twice in the list (name with/without realm).
 

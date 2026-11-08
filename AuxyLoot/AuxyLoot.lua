@@ -42,6 +42,9 @@ if GetLocale and GetLocale() ~= "deDE" then
         ["gebunden"] = "Bound",
         ["+%d weitere (Maus über die Zeile)"] = "+%d more (hover the row)",
         ["vorbei"] = "over",
+        ["%d/%d gewählt"] = "%d/%d chosen",
+        ["ausstehend"] = "pending",
+        ["Alle Mitspieler sofort anzeigen (Fenster wächst nicht)"] = "Show all group members right away (window never grows)",
         ["Test-Item "] = "Test item ",
         ["Test: drei Beispiel-Würfe für 30 s mit Beispiel-Mitspielern (Klicks würfeln hier nicht wirklich)."] = "Test: three example rolls for 30 s with made-up players (clicks don't really roll here).",
         ["Position zurückgesetzt."] = "Position reset.",
@@ -81,7 +84,7 @@ end
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemIconByID = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
-local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5,
+local DEFAULTS = { hideBlizzard = true, scale = 1, width = 300, grow = "DOWN", hideChosen = false, linger = 6, list = true, listMax = 5, seed = true,
     autoClose = true, feed = true, feedSelf = false, feedTime = 12, feedMax = 5, feedQuality = 1, feedRollsOnly = true }
 local rolledItems = {} -- itemID → Zeit des Wurfs (für „Beute der Gruppe: nur gewürfelte Items“)
 local LINE = 13 -- Höhe einer Mitspieler-Zeile unter dem Item
@@ -328,10 +331,30 @@ local function Reason(code) local k = REASON[code or 0]; return k and _G[k] or L
 -- Infozeile: Wahl und Würfe der anderen, am Ende der Gewinner
 -- kurzer Name: ohne Server, nur der Vorname („Thorn Eisenfaust-Forever“ » „Thorn“)
 local function ShortName(n) n = (n or "?"):gsub("%-.*$", ""); return n:match("^(%S+)") or n end
+-- Alle Gruppenmitglieder (Vornamen). Beim Start eines Wurfs sofort in die Liste eingetragen → die Höhe der Zeile
+-- steht von Anfang an fest, die Knöpfe wandern nicht, wenn die Würfe eintrudeln (sonst Fehlklicks, 08.11.)
+local function GroupNames()
+    local t, seen = {}, {}
+    local n = GetNumGroupMembers and GetNumGroupMembers() or 0
+    if n == 0 or not UnitName then return t end
+    local function add(unit)
+        local name = UnitName(unit)
+        if not name or secret(name) then return end
+        name = ShortName(name)
+        if not seen[name] then seen[name] = true; t[#t + 1] = name end
+    end
+    add("player")
+    if IsInRaid and IsInRaid() then for i = 1, n do add("raid" .. i) end
+    else for i = 1, n - 1 do add("party" .. i) end end
+    return t
+end
 local GROUPS = { { 1, "|cff4cd964" .. L["Bedarf"] .. "|r" }, { 2, "|cffffd100" .. L["Gier"] .. "|r" }, { 3, "|cffb48cff" .. L["Entz."] .. "|r" } }
 -- Infozeile: „Bedarf: Thorn 87 · Gier: Grimbold 45, Mira · Passen: Lirael“, am Ende der Gewinner
 local function UpdateInfo(r)
     local parts = {}
+    -- „3/5 gewählt“: wie viele schon entschieden haben (nur mit Mitspielerliste und mehr als einem Spieler)
+    local total, chosen = #(r.porder or {}), 0
+    for _, name in ipairs(r.porder or {}) do if r.players[name].choice ~= nil then chosen = chosen + 1 end end
     if r.winner then
         local p = r.players[r.winner]
         parts[1] = ("|cff4cd964" .. L["» %s gewinnt%s"] .. "|r"):format(ShortName(r.winner), p and p.roll and (" (" .. p.roll .. ")") or "")
@@ -339,6 +362,9 @@ local function UpdateInfo(r)
         parts[1] = "|cff999999" .. L["Alle haben gepasst"] .. "|r"
     elseif r.bop then
         parts[1] = "|cffff6060" .. L["gebunden"] .. "|r"
+    end
+    if not r.winner and not r.allPassed and db.list and total > 1 then
+        parts[#parts + 1] = "|cff999999" .. L["%d/%d gewählt"]:format(chosen, total) .. "|r"
     end
     if not r.winner and not r.allPassed and not db.list then
         local by = {}
@@ -404,7 +430,7 @@ local function UpdateList(r)
             l.roll:ClearAllPoints(); l.roll:SetPoint("TOPRIGHT", r, "TOPRIGHT", -8, y); l.roll:SetWidth(40)
             local won, pass = n == r.winner, p.choice == 0
             l.name:SetText(ShortName(n) .. (won and "  «" or ""))
-            l.choice:SetText(CHOICE_TEXT[p.choice] or "|cff777777…|r")
+            l.choice:SetText(CHOICE_TEXT[p.choice] or ("|cff777777" .. L["ausstehend"] .. "|r"))
             l.roll:SetText(p.roll and tostring(p.roll) or "")
             if won then l.name:SetTextColor(0.3, 0.85, 0.4); l.roll:SetTextColor(0.3, 0.85, 0.4)
             elseif pass then l.name:SetTextColor(0.55, 0.55, 0.55); l.roll:SetTextColor(0.55, 0.55, 0.55)
@@ -441,6 +467,9 @@ local function Fill(r, rollID, info)
     r.ended, r.removeAt, r.winner, r.allPassed, r.bop = nil, nil, nil, nil, info.bop
     r.itemID = type(info.link) == "string" and tonumber(info.link:match("item:(%d+)")) or nil
     r.players, r.porder = {}, {}
+    if db.seed ~= false and db.list then
+        for _, name in ipairs(GroupNames()) do r.players[name] = {}; r.porder[#r.porder + 1] = name end
+    end
     UpdateList(r)
     r.icon:SetTexture(info.texture)
     r.count:SetText((info.count or 1) > 1 and info.count or "")
@@ -589,7 +618,9 @@ local function RowFor(itemID, name, kind)
     for _, id in ipairs(order) do
         local r = rows[id]
         if r and r.itemID == itemID and not r.winner and not r.allPassed then
-            if kind ~= "choice" or not r.players[name] then return r end
+            -- Wahl-Meldung: Zeile, in der dieser Spieler noch nicht gewählt hat (er steht evtl. schon vorbelegt in der Liste)
+            local p = r.players[name]
+            if kind ~= "choice" or not p or p.choice == nil then return r end
         end
     end
 end
@@ -870,6 +901,12 @@ local function Test()
             rN = 2, link = "item:" .. t[1], total = 30 })
         local r = rows[testID]
         r.endTime = GetTime() + 30
+        if db.seed ~= false and db.list then -- Beispiel-Gruppe von Anfang an (wie im Dungeon mit 5 Spielern)
+            for _, n in ipairs({ "Grimbold", "Lirael", "Thorn", "Mira", ShortName(UnitName("player") or "Du") }) do
+                if not r.players[n] then r.players[n] = {}; r.porder[#r.porder + 1] = n end
+            end
+            UpdateInfo(r); UpdateList(r); Layout()
+        end
         if t[2] == 2 then Note(r, "Grimbold", 2, 45); Note(r, "Lirael", 0); r.testWinner = "Grimbold" end
         if t[2] == 3 then Note(r, "Thorn", 1, 87); Note(r, "Mira", 2) end
     end
@@ -909,6 +946,8 @@ local function FillMenu(root)
         function() db.hideBlizzard = not db.hideBlizzard; ApplyBlizzard() end)
     root:CreateCheckbox(L["Zeile nach der Wahl ausblenden"], function() return db.hideChosen end,
         function() db.hideChosen = not db.hideChosen end)
+    root:CreateCheckbox(L["Alle Mitspieler sofort anzeigen (Fenster wächst nicht)"], function() return db.seed ~= false end,
+        function() db.seed = not (db.seed ~= false) end)
     root:CreateCheckbox(L["Würfe der anderen untereinander"], function() return db.list end, function()
         db.list = not db.list
         for _, r in pairs(rows) do UpdateInfo(r); UpdateList(r) end
