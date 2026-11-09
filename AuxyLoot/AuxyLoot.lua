@@ -2,18 +2,13 @@
 --   Öffnet sich von selbst, sobald ein Item zum Würfeln auftaucht: Symbol, Name in Qualitätsfarbe,
 --   Restzeit als feiner Balken, Knöpfe Bedarf / Gier / Entzaubern / Passen. Nach der Wahl bleibt die
 --   Zeile gedimmt mit deiner Wahl stehen, bis das Würfeln endet; ist nichts mehr offen, schließt es sich.
---   Läuft als eigenes Addon „AuxyLoot“ und als Teil der Auxy UI Suite (dieselbe Datei). Sind beide da,
---   arbeitet nur das eigene Addon. In der Suite: Auxy-Stil (/auxy stil) und Bearbeitungsmodus.
+--   Läuft allein; ist die Auxy UI Suite (privat) ebenfalls da, kommen Auxy-Stil (/auxy stil) und Bearbeitungsmodus dazu.
 --   Zeigt auch, was die anderen gewählt und gewürfelt haben, und am Ende den Gewinner.
 --   Befehl /auxyloot. Eigener Code, MIT-Lizenz (LICENSE) – github.com/Auxilias/auxy-loot
 local ADDON, ns = ...
-
--- In der Suite zurücktreten, wenn das eigene Addon „AuxyLoot“ ebenfalls geladen wird
-if ADDON ~= "AuxyLoot" and C_AddOns and C_AddOns.GetAddOnEnableState then
-    local ok, state = pcall(C_AddOns.GetAddOnEnableState, "AuxyLoot", UnitName("player"))
-    local loadable = not C_AddOns.IsAddOnLoadable or select(1, C_AddOns.IsAddOnLoadable("AuxyLoot"))
-    if ok and type(state) == "number" and state > 0 and loadable then return end
-end
+-- Optional: Ist die Auxy UI Suite geladen (OptionalDeps), nutzt Auxy Loot deren Stil, Bearbeitungsmodus und Menüs.
+-- Ohne Suite läuft es allein mit eigenem Aussehen.
+if type(_G.AuxyUI_NS) == "table" then ns = _G.AuxyUI_NS end
 
 -- Sprache: Deutsch (deDE) im Code als Schlüssel, alle anderen Clients bekommen Englisch. Fehlt ein Eintrag → deutscher Text.
 local L = setmetatable({}, { __index = function(_, k) return k end })
