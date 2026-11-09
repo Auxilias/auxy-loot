@@ -1,6 +1,7 @@
 ## Interface: 16001
 ## Title: Auxy Loot
-## Notes: Kleines, dezentes Würfelfenster: öffnet sich von selbst, wenn ein Item zum Würfeln auftaucht (Bedarf, Gier, Entzaubern, Passen, Restzeit) und zeigt, was die anderen würfeln. Befehl: /auxyloot
+## Notes: Small, unobtrusive roll window: opens by itself when an item is up for rolling (Need, Greed, Disenchant, Pass, time left) and shows what everyone else rolls. German on German clients, English otherwise. Command: /auxyloot
+## Notes-deDE: Kleines, dezentes Würfelfenster: öffnet sich von selbst, wenn ein Item zum Würfeln auftaucht (Bedarf, Gier, Entzaubern, Passen, Restzeit) und zeigt, was die anderen würfeln. Deutsch bei deutschem Client, sonst Englisch. Befehl: /auxyloot
 ## Author: Auxilias
 ## X-Curse-Project-ID: 1790217
 ## Version: 1.3

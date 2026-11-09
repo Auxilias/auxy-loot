@@ -1,4 +1,5 @@
 Auxy Loot – Würfelfenster für Gruppen-Loot in WoW Forever
+(English: see README.txt)
 
 Installieren
   Den Ordner "AuxyLoot" (aus der zip) nach
@@ -27,6 +28,10 @@ Einstellungen (Rechtsklick auf die Titelzeile oder /auxyloot menü)
     ab Qualität, Anzeigedauer
   - Lootfilter je Qualität: fragen, automatisch Gier oder automatisch
     passen. Bei gebundenen Items (BoP) wird immer gefragt. Ab Werk aus.
+
+Sprache
+  Die Oberfläche ist Deutsch bei deutschem Client, sonst Englisch.
+  Die Befehle gibt es deutsch und englisch (oben/up, groß/size, menü/menu).
 
 Befehle
   /auxyloot test       drei Beispiel-Würfe (es wird nicht gewürfelt)

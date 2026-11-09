@@ -5,7 +5,8 @@
 <h1 align="center">Auxy Loot</h1>
 
 <p align="center">
-  Würfelfenster für Gruppen-Loot in <b>World of Warcraft: Forever</b>
+  Würfelfenster für Gruppen-Loot in <b>World of Warcraft: Forever</b><br>
+  <i>Roll window for group loot in World of Warcraft: Forever – <a href="#english">English below</a></i>
 </p>
 
 <p align="center">
@@ -76,6 +77,63 @@ MIT, siehe [LICENSE](https://github.com/Auxilias/auxy-loot/blob/main/LICENSE).
 
 ---
 
-### English
+## English
 
-A compact group-loot roll window for WoW: Forever. It opens on its own when a roll starts and has Need, Greed, Disenchant and Pass buttons. It also shows what everyone else picked and rolled, and who won. Optional loot filter per quality (never for bind-on-pickup items). Survives `/reload`. Type `/auxyloot test` for a demo. The UI is German on German clients and English on all others; commands work in both languages (`up`/`down`, `size 1.2`). Written largely with AI assistance (Claude), tested in game. MIT license.
+A compact roll window for group loot in **World of Warcraft: Forever**. Blizzard's roll frame is big and doesn't show who picked what. Auxy Loot replaces it with a slim bar: item, time left and the four buttons. Below it you see what everyone else picked and rolled, and at the end who gets the item.
+
+### Features
+
+- **Opens by itself** as soon as a roll starts. Item icon, name in quality colour, time left as a bar.
+- **Need, Greed, Disenchant, Pass.** Whatever isn't possible right now is greyed out, the tooltip says why.
+- **Group rolls:** under each item you see who picked what and rolled what. Need on top, highest roll first, the winner is marked. Hover the row for the full list.
+- **Group loot:** a small list of who received the items that were rolled for. Disappears after a few seconds.
+- **Loot filter** per quality: ask, auto Greed or auto Pass. Bind-on-pickup items always ask. Off by default.
+- **Closes the loot window:** if only roll items are left in the corpse, Auxy Loot closes the loot window. Otherwise WoW ignores right-clicks into the world. Rolling continues.
+- **Survives `/reload`:** running rolls, the others' choices and the loot list are back afterwards.
+- Size, width and direction (grows down or up) are adjustable.
+
+### Installation
+
+**With Wago:** [addons.wago.io/addons/auxy-loot](https://addons.wago.io/addons/auxy-loot). New versions appear there automatically.
+
+**Manually:**
+
+1. Download `AuxyLoot.zip` from [Releases](https://github.com/Auxilias/auxy-loot/releases/latest).
+2. Unpack it to `World of Warcraft\_forever_\Interface\AddOns\`. You then have a folder `AuxyLoot` there.
+3. Restart WoW.
+
+To update, just replace the folder; your settings are kept.
+
+### Usage
+
+Type `/auxyloot test` to try it. It shows three example rolls with made-up players; nothing is rolled.
+
+| Command | What it does |
+|---|---|
+| `/auxyloot test` | show example rolls |
+| `/auxyloot menu` | open settings |
+| `/auxyloot up` / `down` | window grows up or down |
+| `/auxyloot size 1.2` | size (0.6 to 2) |
+| `/auxyloot blizzard` | show or hide Blizzard's roll window again |
+| `/auxyloot reset` | reset position |
+
+Move it by dragging the golden title bar. Right-click the title bar or a row to open the settings.
+
+### Good to know
+
+- The interface is **German on German clients and English on all others**. Auxy Loot reads the others' rolls from Blizzard's loot messages, which works in every language.
+- All commands work in German and English (`/auxyloot oben` = `up`, `groß 1.2` = `size 1.2`, `menü` = `menu`).
+- Auxy Loot only rolls by itself if you set up the loot filter for it.
+- Bugs or ideas are welcome as an [issue](https://github.com/Auxilias/auxy-loot/issues). For Lua errors, the text from BugSack helps.
+
+### Changes
+
+What's new in which version is listed in the [CHANGELOG](https://github.com/Auxilias/auxy-loot/blob/main/CHANGELOG.md).
+
+### How it was made
+
+Auxy Loot is a hobby project for my group in WoW Forever. The code is largely written with AI (Claude by Anthropic). Ideas, in-game testing and deciding what goes in come from me.
+
+### License
+
+MIT, see [LICENSE](https://github.com/Auxilias/auxy-loot/blob/main/LICENSE).
