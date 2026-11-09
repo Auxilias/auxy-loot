@@ -21,7 +21,7 @@ PY
 git add -A
 git commit -q -m "Auxy Loot $VER
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git -c credential.helper= -c credential.helper='!gh auth git-credential' push -q
 gh release create "v$VER" "$ZIP" --repo Auxilias/auxy-loot --title "Auxy Loot $VER" --notes "$NOTES"
 echo "Veröffentlicht: https://github.com/Auxilias/auxy-loot/releases/tag/v$VER"

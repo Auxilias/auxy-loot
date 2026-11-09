@@ -1,5 +1,8 @@
 # Änderungen
 
+## 1.4
+- Beschreibung jetzt auf Deutsch und Englisch (AddOn-Liste, README.txt im Zip, README); keine Änderung an der Funktion. / Description now in German and English (addon list, README.txt in the zip, README); no functional changes.
+
 ## 1.3
 - Fix: the winner now stays visible for the full result time (default 5 s) even when the result message arrives after the roll timer ended. New 5 s option under "Show result for". / Fix: Der Gewinner bleibt jetzt die volle Ergebnis-Zeit (Standard 5 s) sichtbar, auch wenn die Meldung erst nach Ablauf der Würfelzeit kommt. Neue Auswahl 5 s unter "Ergebnis anzeigen".
 
