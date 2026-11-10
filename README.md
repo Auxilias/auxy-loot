@@ -67,6 +67,9 @@ Verschieben über die goldene Titelzeile. Rechtsklick auf die Titelzeile oder ei
 
 Was in welcher Version neu ist, steht im [CHANGELOG](https://github.com/Auxilias/auxy-loot/blob/main/CHANGELOG.md).
 
+## Weitere Addons
+- **[Auxy Recap](https://github.com/Auxilias/auxy-recap)**: Rückblick nach jedem Level-Up mit Dauer, XP pro Stunde, Gold, Kampfwerten und vielen Funstats.
+
 ## Wie es entstanden ist
 
 Auxy Loot ist ein Hobbyprojekt für meine Gruppe in WoW Forever. Der Code ist größtenteils mit KI geschrieben (Claude von Anthropic). Ideen, Tests im Spiel und die Entscheidung, was rein kommt, kommen von mir.
@@ -129,6 +132,9 @@ Move it by dragging the golden title bar. Right-click the title bar or a row to 
 ### Changes
 
 What's new in which version is listed in the [CHANGELOG](https://github.com/Auxilias/auxy-loot/blob/main/CHANGELOG.md).
+
+### More addons
+- **[Auxy Recap](https://github.com/Auxilias/auxy-recap)**: a recap after every level-up with time, XP per hour, gold, combat stats and lots of fun stats.
 
 ### How it was made
 
